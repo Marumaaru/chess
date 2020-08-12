@@ -16,4 +16,8 @@ class Board
     end
     puts '    a   b   c   d   e   f   g   h  '
   end
+
+  def place(piece)
+    board[piece.rank][piece.file] = piece.name
+  end
 end

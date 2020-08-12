@@ -1,4 +1,5 @@
 require './lib/board'
+require './lib/knight'
 
 describe Board do
   subject(:test) { described_class.new }
@@ -47,6 +48,26 @@ describe Board do
               a   b   c   d   e   f   g   h  
           HEREDOC
         expect { test.show }.to output((printed_board)).to_stdout
+      end
+    end
+  end
+
+  describe "#place(piece)" do
+    context 'when given a piece' do
+      let(:knight) { Knight.new(1,7) }
+
+      it 'places it on the board' do
+        board_with_knight_placed = 
+          [[" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", "N", " ", " ", " ", " ", " ", " "]]
+        test.place(knight)
+        expect(test.board).to eq(board_with_knight_placed)
       end
     end
   end
