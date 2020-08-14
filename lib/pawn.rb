@@ -1,12 +1,13 @@
 class Pawn
-    attr_reader :name, :file, :rank  
+    attr_reader :name, :file, :rank, :symbol
     
   #   MOVES = [[1, 2], [-1, 2], [1, -2], [-1, -2], [2, 1], [-2, 1], [2, -1], [-2, -1]].freeze
     
-    def initialize(file, rank, parent = nil) 
+    def initialize(file, rank, symbol, parent = nil) 
       @file = file
       @rank = rank
       @name = ' '
+      @symbol = symbol
       @parent = parent
       @children = []
     end
