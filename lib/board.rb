@@ -10,11 +10,23 @@ class Board
   def show
     puts "\n    a   b   c   d   e   f   g   h  "
     puts '  +---+---+---+---+---+---+---+---+'
-    board.each_with_index do |row, idx|
-      puts "#{board.size - idx} | " + row.each { |square| square }.join(' | ') + " | #{board.size - idx}"
+    mapped_board.each_with_index do |row, idx|
+      puts "#{board.size - idx} | " + row.join(' | ') + " | #{board.size - idx}"
       puts '  +---+---+---+---+---+---+---+---+'
     end
     puts '    a   b   c   d   e   f   g   h  '
+  end
+
+  def mapped_board
+    board.map do |row|
+      row.map do |square| 
+        if square == ' '
+          " "
+        else
+          square.symbol
+        end
+      end
+    end
   end
 
   def place(piece)

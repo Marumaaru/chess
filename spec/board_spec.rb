@@ -22,7 +22,7 @@ describe Board do
   end
 
   describe "#show" do
-    context 'when asking to show a board' do
+    context 'when a board is empty' do
       it 'outputs a pretty formatted grid' do
         printed_board = 
           <<~HEREDOC
@@ -44,6 +44,47 @@ describe Board do
           2 |   |   |   |   |   |   |   |   | 2
             +---+---+---+---+---+---+---+---+
           1 |   |   |   |   |   |   |   |   | 1
+            +---+---+---+---+---+---+---+---+
+              a   b   c   d   e   f   g   h  
+          HEREDOC
+        expect { test.show }.to output((printed_board)).to_stdout
+      end
+    end
+
+    context 'when a board is populated' do
+      let(:knight1) { Knight.new(1, 7, "\u2658") }
+      let(:knight2) { Knight.new(6, 7, "\u2658") }
+      let(:knight3) { Knight.new(1, 0, "\u265E") }
+      let(:knight4) { Knight.new(6, 0, "\u265E") }
+
+      before do
+        test.place(knight1)
+        test.place(knight2)
+        test.place(knight3)
+        test.place(knight4)
+      end
+
+      it 'outputs a pretty formatted grid with pieces symbols' do
+        printed_board = 
+          <<~HEREDOC
+
+              a   b   c   d   e   f   g   h  
+            +---+---+---+---+---+---+---+---+
+          8 |   | ♞ |   |   |   |   | ♞ |   | 8
+            +---+---+---+---+---+---+---+---+
+          7 |   |   |   |   |   |   |   |   | 7
+            +---+---+---+---+---+---+---+---+
+          6 |   |   |   |   |   |   |   |   | 6
+            +---+---+---+---+---+---+---+---+
+          5 |   |   |   |   |   |   |   |   | 5
+            +---+---+---+---+---+---+---+---+
+          4 |   |   |   |   |   |   |   |   | 4
+            +---+---+---+---+---+---+---+---+
+          3 |   |   |   |   |   |   |   |   | 3
+            +---+---+---+---+---+---+---+---+
+          2 |   |   |   |   |   |   |   |   | 2
+            +---+---+---+---+---+---+---+---+
+          1 |   | ♘ |   |   |   |   | ♘ |   | 1
             +---+---+---+---+---+---+---+---+
               a   b   c   d   e   f   g   h  
           HEREDOC
