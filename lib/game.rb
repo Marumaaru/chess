@@ -24,6 +24,26 @@ class Game
     # board.show
   end
 
+  def make_move(input)
+    active_piece = activate_piece_by(input)
+    new_piece = active_piece.class.new(convert_file_algebraic_notation(input), convert_rank_algebraic_notation(input), active_piece.symbol)
+    board.clean(active_piece)
+    board.place(new_piece)
+  end
+
+  def activate_piece_by(input)
+    list_of_pieces = board.find_pieces_by(input)
+    list_of_pieces.each do |piece| #use .select???
+      return piece if piece.where_can_jump_from_here(piece.file, piece.rank).include?(convert_move(input))
+    end
+  end
+
+  def convert_move(input)
+    trg_file = convert_file_algebraic_notation(input)
+    trg_rank = convert_rank_algebraic_notation(input)
+    [trg_file, trg_rank]
+  end
+
   def convert_rank_algebraic_notation(input)
     third_letter = input.split('')[2].to_i
     board.board.size - third_letter
