@@ -72,6 +72,35 @@ describe Board do
     end
   end
 
+  describe "#clean(piece)" do
+    context 'if a piece was moved' do
+      let(:knight) { Knight.new(1, 7, "\u2658") }
+
+      it 'empties an original square' do
+        test.instance_variable_set(:@board,
+          [[" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", knight, " ", " ", " ", " ", " ", " "]])
+        empty_board =
+          [[" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "],
+           [" ", " ", " ", " ", " ", " ", " ", " "]]
+        test.clean(knight)
+        expect(test.board).to eq(empty_board)
+      end
+    end
+  end
+
   describe "#find_pieces_by(input)" do
     let(:knight1) { Knight.new(1, 7, "\u2658") }
     let(:knight2) { Knight.new(6, 7, "\u2658") }

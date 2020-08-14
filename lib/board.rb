@@ -21,6 +21,10 @@ class Board
     board[piece.rank][piece.file] = piece
   end
 
+  def clean(piece)
+    board[piece.rank][piece.file] = ' '
+  end
+
   def find_pieces_by(input)
     first_letter = input.split('').first
     list_of_pieces = []
