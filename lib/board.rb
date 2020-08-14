@@ -21,12 +21,14 @@ class Board
     board[piece.rank][piece.file] = piece
   end
 
-  def activate_piece(input)
+  def find_pieces_by(input)
     first_letter = input.split('').first
+    list_of_pieces = []
     board.each do |row|
       row.each do |square|
-        return square if square.name.eql?(first_letter) unless square == " "
+        list_of_pieces << square if square.name.eql?(first_letter) unless square == " "
       end
     end
+    list_of_pieces
   end
 end

@@ -72,23 +72,22 @@ describe Board do
     end
   end
 
-  describe "#activate_piece(input)" do
-    let(:knight) { Knight.new(1, 7, "\u2658") }
+  describe "#find_pieces_by(input)" do
+    let(:knight1) { Knight.new(1, 7, "\u2658") }
+    let(:knight2) { Knight.new(6, 7, "\u2658") }
+    let(:knight3) { Knight.new(1, 0, "\u265E") }
+    let(:knight4) { Knight.new(6, 0, "\u265E") }
+
     context 'when receiving input' do
-      it 'finds a piece by first letter' do
+      it 'finds all pieces by first letter' do
         input = 'Na3'
-        test.place(knight)
-        # game_test.instance_variable_set(:@board, 
-        #     [[" ", " ", " ", " ", " ", " ", " ", " "],
-        #    [" ", " ", " ", " ", " ", " ", " ", " "],
-        #    [" ", " ", " ", " ", " ", " ", " ", " "],
-        #    [" ", " ", " ", " ", " ", " ", " ", " "],
-        #    [" ", " ", " ", " ", " ", " ", " ", " "],
-        #    [" ", " ", " ", " ", " ", " ", " ", " "],
-        #    [" ", " ", " ", " ", " ", " ", " ", " "],
-        #    [" ", knight, " ", " ", " ", " ", " ", " "]])
-        result = test.activate_piece(input)
-        expect(result).to eq(knight)
+        test.place(knight1)
+        test.place(knight2)
+        test.place(knight3)
+        test.place(knight4)
+        list_of_knights = [knight3, knight4, knight1, knight2]
+        result = test.find_pieces_by(input)
+        expect(result).to eq(list_of_knights)
       end
     end
   end
