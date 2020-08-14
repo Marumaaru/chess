@@ -18,6 +18,15 @@ class Board
   end
 
   def place(piece)
-    board[piece.rank][piece.file] = piece.name
+    board[piece.rank][piece.file] = piece
+  end
+
+  def activate_piece(input)
+    first_letter = input.split('').first
+    board.each do |row|
+      row.each do |square|
+        return square if square.name.eql?(first_letter) unless square == " "
+      end
+    end
   end
 end

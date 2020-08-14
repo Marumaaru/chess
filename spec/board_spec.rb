@@ -54,7 +54,7 @@ describe Board do
 
   describe "#place(piece)" do
     context 'when given a piece' do
-      let(:knight) { Knight.new(1,7) }
+      let(:knight) { Knight.new(1, 7, "\u2658") }
 
       it 'places it on the board' do
         board_with_knight_placed = 
@@ -65,9 +65,30 @@ describe Board do
            [" ", " ", " ", " ", " ", " ", " ", " "],
            [" ", " ", " ", " ", " ", " ", " ", " "],
            [" ", " ", " ", " ", " ", " ", " ", " "],
-           [" ", "N", " ", " ", " ", " ", " ", " "]]
+           [" ", knight, " ", " ", " ", " ", " ", " "]]
         test.place(knight)
         expect(test.board).to eq(board_with_knight_placed)
+      end
+    end
+  end
+
+  describe "#activate_piece(input)" do
+    let(:knight) { Knight.new(1, 7, "\u2658") }
+    context 'when receiving input' do
+      it 'finds a piece by first letter' do
+        input = 'Na3'
+        test.place(knight)
+        # game_test.instance_variable_set(:@board, 
+        #     [[" ", " ", " ", " ", " ", " ", " ", " "],
+        #    [" ", " ", " ", " ", " ", " ", " ", " "],
+        #    [" ", " ", " ", " ", " ", " ", " ", " "],
+        #    [" ", " ", " ", " ", " ", " ", " ", " "],
+        #    [" ", " ", " ", " ", " ", " ", " ", " "],
+        #    [" ", " ", " ", " ", " ", " ", " ", " "],
+        #    [" ", " ", " ", " ", " ", " ", " ", " "],
+        #    [" ", knight, " ", " ", " ", " ", " ", " "]])
+        result = test.activate_piece(input)
+        expect(result).to eq(knight)
       end
     end
   end
