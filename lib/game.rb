@@ -17,41 +17,31 @@ class Game
     @current_player_idx = 0
   end
 
+  def starting_coords(input)
+    [rank_coord(split_lan(input)[0]), file_coord(split_lan(input)[0])]
+  end
+
+  def ending_coords(input)
+    [rank_coord(split_lan(input)[1]), file_coord(split_lan(input)[1])]
+  end
+
+  def split_lan(input)
+    input.scan(/[a-z][1-8]/)
+  end
+
+  def rank_coord(input) #convert_rank
+    board.board.size - input.split('').last.to_i
+  end
+
+  def file_coord(input) #convert_file
+    (input.split('').first.ord - 49).chr.to_i
+  end
+
   def setup
     create_player(1)
     create_player(2)
     populate_board
-    # board.show
-  end
-
-  def make_move(input)
-    active_piece = activate_piece_by(input)
-    new_piece = active_piece.class.new(convert_file_algebraic_notation(input), convert_rank_algebraic_notation(input), active_piece.symbol)
-    board.clean(active_piece)
-    board.place(new_piece)
-  end
-
-  def activate_piece_by(input)
-    list_of_pieces = board.find_pieces_by(input)
-    list_of_pieces.each do |piece| #use .select???
-      return piece if piece.where_can_jump_from_here(piece.file, piece.rank).include?(convert_move(input))
-    end
-  end
-
-  def convert_move(input)
-    trg_file = convert_file_algebraic_notation(input)
-    trg_rank = convert_rank_algebraic_notation(input)
-    [trg_file, trg_rank]
-  end
-
-  def convert_rank_algebraic_notation(input)
-    third_letter = input.split('')[2].to_i
-    board.board.size - third_letter
-  end
-
-  def convert_file_algebraic_notation(input)
-    second_letter = input.split('')[1]
-    (second_letter.ord - 49).chr.to_i
+    board.show
   end
 
   def create_player(player_number)
@@ -127,3 +117,35 @@ class Game
     board.place(Pawn.new(7, 1, "\u265f"))
   end
 end
+
+# def make_move(input)
+#   active_piece = activate_piece_by(input)
+#   new_piece = active_piece.class.new(convert_file_algebraic_notation(input), convert_rank_algebraic_notation(input), active_piece.symbol)
+#   # board.bfs_traversal(active_piece, new_piece)
+#   board.clean(active_piece)
+#   board.place(new_piece)
+#   board.show
+# end
+
+# def activate_piece_by(input)
+#   list_of_pieces = board.find_pieces_by(input)
+#   list_of_pieces.each do |piece| #use .select???
+#     return piece if piece.where_can_jump_from_here(piece.file, piece.rank).include?(convert_move(input))
+#   end
+# end
+
+# def convert_move(input)
+#   trg_file = convert_file_algebraic_notation(input)
+#   trg_rank = convert_rank_algebraic_notation(input)
+#   [trg_file, trg_rank]
+# end
+
+# def convert_rank_algebraic_notation(input)
+#   third_letter = input.split('')[2].to_i
+#   board.board.size - third_letter
+# end
+
+# def convert_file_algebraic_notation(input)
+#   second_letter = input.split('')[1]
+#   (second_letter.ord - 49).chr.to_i
+# end
