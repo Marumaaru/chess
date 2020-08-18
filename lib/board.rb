@@ -9,36 +9,38 @@ class Board
     @board = Array.new(SIZE) { Array.new(SIZE, EMPTY_SQUARE) }
   end
 
+  #define special moves: postponed
+  #King: castling
+  #Pawn: en passant and promotion
+  
   def valid_move?(src, trg)
     if src.class == Pawn
-      if src.rank == 6 || src.rank == 1
-        if (src.rank - trg.rank).abs <= 2
-          true
-        else
-          puts "Invalid move"
-          false
+      if (src.rank - trg.rank).abs == 1 && src.file == trg.file
+        if src.color == 'white'
+          if (src.rank - trg.rank) > 0
+            true
+          else
+            puts "Invalid move"
+            false
+          end
+        elsif src.color == 'black'
+          if (src.rank - trg.rank) < 0
+            true
+          else
+            puts "Invalid move"
+            false
+          end
         end
-      elsif src.color == 'white'
-        if (src.rank - trg.rank) > 0
-          true
-        else
-          puts "Invalid move"
-          false
-        end
-      elsif src.color == 'black'
-        if (src.rank - trg.rank) < 0
+      elsif src.rank == 6 || src.rank == 1
+        if (src.rank - trg.rank).abs == 2
           true
         else
           puts "Invalid move"
           false
         end
       else
-        if (src.rank - trg.rank).abs == 1 && src.file == trg.file
-          true
-        else
-          puts "Invalid move"
-          false
-        end
+        puts "Invalid move"
+        false
       end
     elsif src.class == Knight
       if ((src.file - trg.file).abs == 1 && (src.rank - trg.rank).abs == 2) ||
@@ -70,8 +72,9 @@ class Board
         false
       end
     elsif src.class == Queen
-      if (src.rank - trg.rank).abs == (src.file - trg.file).abs ||
-          src.rank == trg.rank || src.file == trg.file
+      if (src.rank - trg.rank).abs == (src.file - trg.file).abs
+        true
+      elsif src.rank == trg.rank || src.file == trg.file
         true
       else
         puts 'Invalid move'
@@ -90,8 +93,27 @@ class Board
   #   from.class.new(to[0], to[1])
   # end
 
-  def path_free?(route)
-    route[1..route.size].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE }
+  def path_free?(src, trg)
+    if src.class == Queen
+      bishop_traversal = bfs_traversal(Bishop.new(src.file, src.rank, src.color), Bishop.new(trg.file, trg.rank, trg.color))
+      bishop_route = route(bishop_traversal)
+      rook_traversal = bfs_traversal(Rook.new(src.file, src.rank, src.color), Rook.new(trg.file, trg.rank, trg.color))
+      rook_route = route(rook_traversal)
+      bishop_route[1..bishop_route.size].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE } &&
+      rook_route[1..rook_route.size].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE }
+    else
+      traversal = bfs_traversal(src, trg)
+      route = route(traversal)
+      route[1..route.size].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE }
+    end
+  end
+
+  def enemy?(from, to) #trg_square_enemy?
+    board[from[1]][from[0]].color != board[to[1]][to[0]].color
+  end
+
+  def trg_square_empty?(to)
+    board[to[1]][to[0]] == EMPTY_SQUARE
   end
 
   def bfs_traversal(src, trg, queue = [])
@@ -107,19 +129,26 @@ class Board
   def piece_moves(from, to)
     src = board[from[1]][from[0]]
     trg = src.class.new(to[0], to[1], src.color)
-    # bfs_traversal(src, trg)
-    traversal = bfs_traversal(src, trg)
-    route = route(traversal)
-    if path_free?(route) && valid_move?(src, trg)
-      place(trg)
-      clean(src)
-      show
+    if valid_move?(src, trg)
+      if path_free?(src, trg)
+        place(trg)
+        clean(src)
+        # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
+        show
+      else
+        if trg_square_empty?(to)
+          puts "Invalid move: the path is not free"
+        elsif enemy?(from, to)
+          place(trg)
+          clean(src)
+          show
+        else
+          puts "Invalid move: the path is not free"
+        end
+      end
     end
     # route.each { |move| board[move[1]][move[0]] = '*' }
   end
-
-  #Queen and Pawn non working moves!
-
 
   def route(node, route = [])
     if node.parent.nil?
@@ -148,8 +177,8 @@ class Board
         elsif square == '*'
           '*'
         else
-          # square.symbol
-          square.name
+          square.symbol
+          # square.name
         end
       end
     end

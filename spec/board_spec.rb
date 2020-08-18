@@ -57,10 +57,10 @@ describe Board do
     end
 
     context 'when a board is populated' do
-      let(:knight1) { Knight.new(1, 7, "\u2658") }
-      let(:knight2) { Knight.new(6, 7, "\u2658") }
-      let(:knight3) { Knight.new(1, 0, "\u265E") }
-      let(:knight4) { Knight.new(6, 0, "\u265E") }
+      let(:knight1) { Knight.new(1, 7, 'white') }
+      let(:knight2) { Knight.new(6, 7, 'white') }
+      let(:knight3) { Knight.new(1, 0, 'black') }
+      let(:knight4) { Knight.new(6, 0, 'black') }
 
       before do
         test.place(knight1)
@@ -69,7 +69,7 @@ describe Board do
         test.place(knight4)
       end
 
-      xit 'outputs a pretty formatted grid with pieces symbols' do
+      it 'outputs a pretty formatted grid with pieces symbols' do
         printed_board = 
           <<~HEREDOC
 
@@ -96,7 +96,7 @@ describe Board do
         expect { test.show }.to output((printed_board)).to_stdout
       end
 
-      it 'outputs a pretty formatted grid with piece initials' do
+      xit 'outputs a pretty formatted grid with piece initials' do
         printed_board = 
           <<~HEREDOC
 
@@ -175,10 +175,10 @@ describe Board do
   end
 
   describe "#find_pieces_by(input)" do
-    let(:knight1) { Knight.new(1, 7, "\u2658") }
-    let(:knight2) { Knight.new(6, 7, "\u2658") }
-    let(:knight3) { Knight.new(1, 0, "\u265E") }
-    let(:knight4) { Knight.new(6, 0, "\u265E") }
+    let(:knight1) { Knight.new(1, 7, 'white') }
+    let(:knight2) { Knight.new(6, 7, 'white') }
+    let(:knight3) { Knight.new(1, 0, 'black') }
+    let(:knight4) { Knight.new(6, 0, 'black') }
 
     context 'when receiving input' do
       it 'finds all pieces by first letter' do
@@ -212,8 +212,8 @@ describe Board do
   end
 
   describe "#route(node)" do
-    let(:bishop) { Bishop.new(2, 7) }
-    let(:rook) { Rook.new(0, 7) }
+    let(:bishop) { Bishop.new(2, 7, 'white') }
+    let(:rook) { Rook.new(0, 7, 'white') }
 
     before do
       test.place(bishop)
@@ -243,7 +243,7 @@ describe Board do
     end
   end
 
-  describe "#path_free?(from, to)" do
+  describe "#path_free?(src, trg)" do
     let(:bishop) { Bishop.new(2, 7, 'white') }
     let(:knight) { Knight.new(3, 6, 'white') }
 
@@ -256,9 +256,7 @@ describe Board do
         to = [6, 3]
         src = bishop
         trg = src.class.new(to[0], to[1], src.color)
-        traversal = test.bfs_traversal(src, trg)
-        route = test.route(traversal)
-        result = test.path_free?(route)
+        result = test.path_free?(src, trg)
         expect(result).to eq(true)
       end
     end
@@ -269,9 +267,7 @@ describe Board do
         to = [6, 3]
         src = bishop
         trg = src.class.new(to[0], to[1], src.color)
-        traversal = test.bfs_traversal(src, trg)
-        route = test.route(traversal)
-        result = test.path_free?(route)
+        result = test.path_free?(src, trg)
         expect(result).to eq(false)
       end
     end
@@ -514,6 +510,44 @@ describe Board do
           result = test.valid_move?(src, trg)
           expect(result).to eq(false)
         end
+      end
+    end
+  end
+
+  describe "#enemy?(from, to)" do
+    context 'when there is an opponent on the way' do
+
+      let(:bishop) { Bishop.new(3, 3, 'white') }
+      let(:knight) { Knight.new(6, 6, 'black') }
+
+      before do 
+        test.place(bishop)
+        test.place(knight)
+      end
+
+      it 'detects it' do
+        from = [3, 3]
+        to = [6, 6]
+        result = test.enemy?(from, to)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when there is an ally on the way' do
+
+      let(:bishop) { Bishop.new(3, 3, 'white') }
+      let(:knight) { Knight.new(6, 6, 'white') }
+
+      before do 
+        test.place(bishop)
+        test.place(knight)
+      end
+
+      it 'detects it' do
+        from = [3, 3]
+        to = [6, 6]
+        result = test.enemy?(from, to)
+        expect(result).to eq(false)
       end
     end
   end
