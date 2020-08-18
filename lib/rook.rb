@@ -1,5 +1,5 @@
 class Rook
-  attr_reader :name, :file, :rank, :parent, :color
+  attr_reader :name, :file, :rank, :parent, :color, :symbol
   
   MOVES = [[1, 0], [-1, 0], [0, 1], [0, -1]].freeze
   
@@ -8,9 +8,13 @@ class Rook
     @rank = rank
     @name = 'R'
     @color = color
-    # @symbol = symbol
+    @symbol = assign_symbol_by(color)
     @parent = parent
     @children = []
+  end
+
+  def assign_symbol_by(color)
+    color == 'white' ? "\u2656" : "\u265C"
   end
   
   def where_can_jump_from_here #legal_moves

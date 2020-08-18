@@ -1,5 +1,5 @@
 class Knight
-  attr_reader :name, :file, :rank, :parent, :color
+  attr_reader :name, :file, :rank, :parent, :color, :symbol
 
   MOVES = [[1, 2], [-1, 2], [1, -2], [-1, -2], [2, 1], [-2, 1], [2, -1], [-2, -1]].freeze
   
@@ -9,9 +9,13 @@ class Knight
     @rank = rank
     @name = 'N'
     @color = color
-    # @symbol = symbol
+    @symbol = assign_symbol_by(color)
     @parent = parent
     @children = []
+  end
+
+  def assign_symbol_by(color)
+    color == 'white' ? "\u2658" : "\u265E"
   end
 
   def where_can_jump_from_here #legal_moves

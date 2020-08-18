@@ -1,17 +1,20 @@
 class Bishop
-    attr_reader :name, :file, :rank, :parent, :color
+    attr_reader :name, :file, :rank, :parent, :color, :symbol
     
     MOVES = [[1, 1], [-1, -1], [-1, 1], [1, -1]].freeze
 
-    # def initialize(file, rank, symbol = nil, parent = nil)
     def initialize(file, rank, color, parent = nil)
       @file = file
       @rank = rank
       @name = 'B'
       @color = color
-      # @symbol = symbol
+      @symbol = assign_symbol_by(color)
       @parent = parent
       @children = []
+    end
+
+    def assign_symbol_by(color)
+      color == 'white' ? "\u2657" : "\u265D"
     end
     
     def where_can_jump_from_here #legal_moves
