@@ -313,6 +313,31 @@ describe Board do
         end
       end
 
+      context 'when a Pawn moves 1 square diagonally to attack an enemy' do
+        let(:src) { Pawn.new(3, 5, 'white') }
+        let(:trg) { Pawn.new(2, 4, 'white') }
+        let(:enemy) { Pawn.new(2, 4, 'black') }
+
+        it 'is valid' do
+          test.place(enemy)
+          result = test.valid_move?(src, trg)
+          expect(result).to eq(true)
+        end
+      end
+
+      context 'when a Pawn moves 1 square diagonally to attack an ally' do
+        let(:src) { Pawn.new(3, 5, 'white') }
+        let(:trg) { Pawn.new(2, 4, 'white') }
+        let(:ally) { Pawn.new(2, 4, 'white') }
+
+        it 'is not valid' do
+          test.place(ally)
+          allow(test).to receive(:puts)
+          result = test.valid_move?(src, trg)
+          expect(result).to eq(false)
+        end
+      end
+
       context 'when a Pawn moves 1 square horizontally' do
         let(:src) { Pawn.new(1, 5, 'white') }
         let(:trg) { Pawn.new(2, 5, 'white') }

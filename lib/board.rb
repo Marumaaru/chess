@@ -31,8 +31,17 @@ class Board
             false
           end
         end
-      elsif src.rank == 6 || src.rank == 1
-        if (src.rank - trg.rank).abs == 2
+      elsif (src.rank - trg.rank).abs == 2
+        if src.rank == 6 || src.rank == 1
+          true
+        else
+          puts "Invalid move"
+          false
+        end
+      elsif (src.rank - trg.rank).abs == (src.file - trg.file).abs && 
+            board[trg.rank][trg.file] != EMPTY_SQUARE
+        unless board[trg.rank][trg.file].color == src.color
+        # if board[trg.rank][trg.file].color != src.color
           true
         else
           puts "Invalid move"
@@ -112,8 +121,8 @@ class Board
     board[from[1]][from[0]].color != board[to[1]][to[0]].color
   end
 
-  def trg_square_empty?(to)
-    board[to[1]][to[0]] == EMPTY_SQUARE
+  def empty?(coords)
+    board[coords[1]][coords[0]] == EMPTY_SQUARE
   end
 
   def bfs_traversal(src, trg, queue = [])
@@ -136,7 +145,7 @@ class Board
         # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
         show
       else
-        if trg_square_empty?(to)
+        if empty?(to)
           puts "Invalid move: the path is not free"
         elsif enemy?(from, to)
           place(trg)
