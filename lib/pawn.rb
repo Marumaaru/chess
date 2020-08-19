@@ -1,7 +1,7 @@
 class Pawn
     attr_reader :name, :file, :rank, :parent, :color, :symbol
     
-    MOVES = [[0, 1], [0, -1]].freeze
+    MOVES = [[0, 1], [0, -1], [1, 1], [-1, -1], [-1, 1], [1, -1]].freeze
     
     def initialize(file, rank, color, parent = nil) 
       @file = file
