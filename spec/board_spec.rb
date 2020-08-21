@@ -174,39 +174,92 @@ describe Board do
     end
   end
 
-  describe "#find_pieces_by(input)" do
-    let(:knight1) { Knight.new(1, 7, 'white') }
-    let(:knight2) { Knight.new(6, 7, 'white') }
-    let(:knight3) { Knight.new(1, 0, 'black') }
-    let(:knight4) { Knight.new(6, 0, 'black') }
+  # describe "#find_pieces_by(input)" do
+  #   let(:knight1) { Knight.new(1, 7, 'white') }
+  #   let(:knight2) { Knight.new(6, 7, 'white') }
+  #   let(:knight3) { Knight.new(1, 0, 'black') }
+  #   let(:knight4) { Knight.new(6, 0, 'black') }
 
-    context 'when receiving input' do
-      it 'finds all pieces by first letter' do
-        input = 'Na3'
-        test.place(knight1)
-        test.place(knight2)
-        test.place(knight3)
-        test.place(knight4)
-        list_of_knights = [knight3, knight4, knight1, knight2]
-        result = test.find_pieces_by(input)
-        expect(result).to eq(list_of_knights)
-      end
-    end
-  end
+  #   context 'when receiving input' do
+  #     it 'finds all pieces by first letter' do
+  #       input = 'Na3'
+  #       test.place(knight1)
+  #       test.place(knight2)
+  #       test.place(knight3)
+  #       test.place(knight4)
+  #       list_of_knights = [knight3, knight4, knight1, knight2]
+  #       result = test.find_pieces_by(input)
+  #       expect(result).to eq(list_of_knights)
+  #     end
+  #   end
+  # end
 
   describe "#piece_moves(from, to)" do
-    let(:bishop) { Bishop.new(2, 7) }
+    let(:queen) { Queen.new(4, 4, 'white') }
 
     before do
-      test.place(bishop)
+      test.place(queen)
     end
 
-    context 'when moving a bishop' do
-      xit 'trg square class is Bishop' do
-        from = [2, 7]
-        to = [6, 3]
-        result = test.piece_moves(from, to).class
-        expect(result).to eq(Bishop)
+    context 'when moving a Queen' do
+      it 'moves 1 square diagonally' do
+        from = [4, 4]
+        to = [5, 5]
+        allow(test).to receive(:in_check?).and_return(false)
+        allow(test).to receive(:show)
+        test.piece_moves(from, to)
+        result = test.board[to[1]][to[0]].class
+        expect(result).to eq(Queen)
+      end
+
+      it 'moves 1 square horizontally' do
+        from = [4, 4]
+        to = [5, 4]
+        allow(test).to receive(:in_check?).and_return(false)
+        allow(test).to receive(:show)
+        test.piece_moves(from, to)
+        result = test.board[to[1]][to[0]].class
+        expect(result).to eq(Queen)
+      end
+
+      it 'moves 1 square vertically' do
+        from = [4, 4]
+        to = [4, 3]
+        allow(test).to receive(:in_check?).and_return(false)
+        allow(test).to receive(:show)
+        test.piece_moves(from, to)
+        result = test.board[to[1]][to[0]].class
+        expect(result).to eq(Queen)
+      end
+
+      it 'slides diagonally' do
+        from = [4, 4]
+        to = [0, 0]
+        allow(test).to receive(:in_check?).and_return(false)
+        allow(test).to receive(:show)
+        test.piece_moves(from, to)
+        result = test.board[to[1]][to[0]].class
+        expect(result).to eq(Queen)
+      end
+
+      it 'slides horizontally' do
+        from = [4, 4]
+        to = [0, 4]
+        allow(test).to receive(:in_check?).and_return(false)
+        allow(test).to receive(:show)
+        test.piece_moves(from, to)
+        result = test.board[to[1]][to[0]].class
+        expect(result).to eq(Queen)
+      end
+
+      it 'slides vertically' do
+        from = [4, 4]
+        to = [4, 0]
+        allow(test).to receive(:in_check?).and_return(false)
+        allow(test).to receive(:show)
+        test.piece_moves(from, to)
+        result = test.board[to[1]][to[0]].class
+        expect(result).to eq(Queen)
       end
     end
   end
@@ -245,28 +298,96 @@ describe Board do
 
   describe "#path_free?(src, trg)" do
     let(:bishop) { Bishop.new(2, 7, 'white') }
-    let(:knight) { Knight.new(3, 6, 'white') }
 
     before do 
       test.place(bishop)
     end
 
-    context 'when there are no other pieces on the path' do
+    context 'when there is only one move to target enemy piece' do
+      let(:enemy_knight) { Knight.new(3, 6, 'black') }
+
       it 'is free' do
-        to = [6, 3]
+        test.place(enemy_knight)
         src = bishop
-        trg = src.class.new(to[0], to[1], src.color)
+        trg = enemy_knight
         result = test.path_free?(src, trg)
         expect(result).to eq(true)
       end
     end
 
-    context 'when the path is obstructed' do
+    context 'when there is only one move to target ally piece' do
+      let(:ally_knight) { Knight.new(3, 6, 'white') }
+
       it 'is not free' do
-        test.place(knight)
-        to = [6, 3]
+        test.place(ally_knight)
         src = bishop
-        trg = src.class.new(to[0], to[1], src.color)
+        trg = ally_knight
+        result = test.path_free?(src, trg)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when there are no other pieces on the sliding path to the enemy target' do
+      let(:enemy_knight) { Knight.new(7, 2, 'black') }
+
+      it 'is free' do
+        test.place(enemy_knight)
+        src = bishop
+        trg = enemy_knight
+        result = test.path_free?(src, trg)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when there are no other pieces on the sliding path to the empty square' do
+      xit 'is free' do
+        src = bishop
+        to = [2, 7]
+        trg = test.board[to[0]][to[1]]
+        result = test.path_free?(src, trg)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when there are no other pieces on the sliding path to the ally target' do
+      let(:ally_knight) { Knight.new(7, 2, 'white') }
+
+      it 'is not free' do
+        test.place(ally_knight)
+        src = bishop
+        trg = ally_knight
+        result = test.path_free?(src, trg)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when the path to the enemy is obstructed by ally piece' do
+      let(:rook) { Rook.new(0, 4, 'white') }
+      let(:enemy_knight) { Knight.new(7, 4, 'black') }
+      let(:ally_pawn) { Pawn.new(3, 4, 'white') }
+
+      it 'is not free' do
+        test.place(rook)
+        test.place(enemy_knight)
+        test.place(ally_pawn)
+        src = rook
+        trg = enemy_knight
+        result = test.path_free?(src, trg)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when the path to the enemy is obstructed by another enemy piece' do
+      let(:rook) { Rook.new(0, 4, 'white') }
+      let(:enemy_knight) { Knight.new(7, 4, 'black') }
+      let(:enemy_pawn) { Pawn.new(3, 4, 'black') }
+
+      it 'is not free' do
+        test.place(rook)
+        test.place(enemy_knight)
+        test.place(enemy_pawn)
+        src = rook
+        trg = enemy_knight
         result = test.path_free?(src, trg)
         expect(result).to eq(false)
       end
@@ -345,15 +466,6 @@ describe Board do
           allow(test).to receive(:puts)
           result = test.valid_move?(src, trg)
           expect(result).to eq(false)
-        end
-      end
-
-      context 'when a Knight makes a legal move' do
-        let(:src) { Knight.new(1, 7, 'white') }
-        let(:trg) { Knight.new(0, 5, 'white') }
-        it 'is valid' do
-          result = test.valid_move?(src, trg)
-          expect(result).to eq(true)
         end
       end
     end
@@ -573,6 +685,121 @@ describe Board do
         to = [6, 6]
         result = test.enemy?(from, to)
         expect(result).to eq(false)
+      end
+    end
+  end
+
+  describe "#in_check?" do
+    let(:king) { King.new(4, 4, 'white') }
+    before do
+      test.place(king)
+    end
+    # context 'when a King is under immediate attack' do
+    context 'when a King is under immediate Pawn\'s attack' do
+      let(:pawn) { Pawn.new(3, 3, 'black') }
+      it 'is in check' do
+        test.place(pawn)
+        result = test.in_check?(pawn)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when a King is under immediate Rook\'s attack' do
+      let(:rook) { Rook.new(4, 0, 'black') }
+      it 'is in check' do
+        test.place(rook)
+        result = test.in_check?(rook)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when a King is under immediate Bishop\'s attack' do
+      let(:bishop) { Bishop.new(1, 1, 'black') }
+      it 'is in check' do
+        test.place(bishop)
+        result = test.in_check?(bishop)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when a King is under immediate Knight\'s attack' do
+      let(:knight) { Knight.new(2, 3, 'black') }
+      it 'is in check' do
+        test.place(knight)
+        result = test.in_check?(knight)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when a King is under immediate Queen\'s attack' do
+      let(:queen) { Queen.new(0, 4, 'black') }
+      it 'is in check' do
+        test.place(queen)
+        result = test.in_check?(queen)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when a King is under immediate enemy King\'s attack' do
+      let(:enemy_king) { King.new(5, 5, 'black') }
+      it 'is in check' do
+        test.place(enemy_king)
+        result = test.in_check?(enemy_king)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when none of enemy pieces can attack King' do
+      let(:pawn) { Pawn.new(5, 2, 'black') }
+      let(:rook) { Rook.new(1, 1, 'black') }
+      let(:bishop) { Bishop.new(7, 2, 'black') }
+      let(:knight) { Knight.new(0, 3, 'black') }
+      let(:queen) { Queen.new(1, 5, 'black') }
+
+      it 'is not in check' do
+        test.place(pawn)
+        test.place(rook)
+        test.place(bishop)
+        test.place(knight)
+        test.place(queen)
+        result = test.in_check?(rook)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when an ally piece is defending King' do
+      let(:pawn) { Pawn.new(3, 3, 'white') }
+      let(:queen) { Queen.new(1, 1, 'black') }
+
+      it 'is not in check' do
+        test.place(pawn)
+        test.place(queen)
+        result = test.in_check?(queen)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when King is hiding behind an enemy Pawn' do
+      let(:pawn) { Pawn.new(4, 3, 'black') }
+      # let(:pawn) { Pawn.new(4, 3, 'white') }
+
+      # let(:queen) { Queen.new(4, 0, 'black') }
+      let(:rook) { Rook.new(4, 0, 'black') }
+
+
+      it 'is not in check' do
+        test.place(pawn)
+        # test.place(queen)
+        test.place(rook)
+        # result = test.in_check?(queen)
+        result = test.in_check?(rook)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when a King is not under attack' do
+      it 'is not in check' do
+      
       end
     end
   end

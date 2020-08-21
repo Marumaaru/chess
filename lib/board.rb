@@ -12,43 +12,54 @@ class Board
   #define special moves: postponed
   #King: castling
   #Pawn: en passant and promotion
+
+  #create a Module 'Move_Validator'
+  #put there valid_move?(src, trg)
+  #create a separate test file & copy-paste
+  #refactor heavily!!!(or it's better wait and then refactor)
+
+  #define #in_check? for the King
+
   
   def valid_move?(src, trg)
     if src.class == Pawn
-      if (src.rank - trg.rank).abs == 1 && src.file == trg.file
+      if (src.rank - trg.rank).abs == 1 && src.file == trg.file &&
+        board[trg.rank][trg.file] == EMPTY_SQUARE
         if src.color == 'white'
           if (src.rank - trg.rank) > 0
             true
           else
-            puts "Invalid move"
+            # puts "Invalid move"
             false
           end
         elsif src.color == 'black'
           if (src.rank - trg.rank) < 0
             true
           else
-            puts "Invalid move"
+            # puts "Invalid move"
             false
           end
         end
-      elsif (src.rank - trg.rank).abs == 2
+      elsif (src.rank - trg.rank).abs == 2 &&
+        board[trg.rank][trg.file] == EMPTY_SQUARE
         if src.rank == 6 || src.rank == 1
           true
         else
-          puts "Invalid move"
+          # puts "Invalid move"
           false
         end
-      elsif (src.rank - trg.rank).abs == (src.file - trg.file).abs && 
+      elsif (src.rank - trg.rank).abs == (src.file - trg.file).abs &&
+            (src.rank - trg.rank).abs == 1 && #otherwise can slide diagonally
             board[trg.rank][trg.file] != EMPTY_SQUARE
         unless board[trg.rank][trg.file].color == src.color
         # if board[trg.rank][trg.file].color != src.color
           true
         else
-          puts "Invalid move"
+          # puts "Invalid move"
           false
         end
       else
-        puts "Invalid move"
+        # puts "Invalid move"
         false
       end
     elsif src.class == Knight
@@ -56,28 +67,28 @@ class Board
         ((src.file - trg.file).abs == 2 && (src.rank - trg.rank).abs == 1)
         true
       else
-        puts 'Invalid move'
+        # puts 'Invalid move'
         false
       end
     elsif src.class == Bishop
       if (src.rank - trg.rank).abs == (src.file - trg.file).abs
         true
       else
-        puts 'Invalid move'
+        # puts 'Invalid move'
         false
       end
     elsif src.class == Rook
       if src.rank == trg.rank || src.file == trg.file
         true
       else
-        puts 'Invalid move'
+        # puts 'Invalid move'
         false
       end
     elsif src.class == King
       if (src.rank - trg.rank).abs <= 1 && (src.file - trg.file).abs <= 1
         true
       else
-        puts 'Invalid move'
+        # puts 'Invalid move'
         false
       end
     elsif src.class == Queen
@@ -86,7 +97,7 @@ class Board
       elsif src.rank == trg.rank || src.file == trg.file
         true
       else
-        puts 'Invalid move'
+        # puts 'Invalid move'
         false
       end
     else
@@ -103,18 +114,32 @@ class Board
   # end
 
   def path_free?(src, trg)
-    if src.class == Queen
-      bishop_traversal = bfs_traversal(Bishop.new(src.file, src.rank, src.color), Bishop.new(trg.file, trg.rank, trg.color))
-      bishop_route = route(bishop_traversal)
-      rook_traversal = bfs_traversal(Rook.new(src.file, src.rank, src.color), Rook.new(trg.file, trg.rank, trg.color))
-      rook_route = route(rook_traversal)
-      bishop_route[1..bishop_route.size].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE } &&
-      rook_route[1..rook_route.size].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE }
+    traversal = bfs_traversal(src, trg)
+    route = route(traversal)
+  # bnding.pry
+    if target_is_enemy?(src, trg) || target_is_empty?(trg)
+      if route.size <= 2
+        true
+      elsif no_obstacles_on?(route)
+        true
+      else
+        false
+      end
     else
-      traversal = bfs_traversal(src, trg)
-      route = route(traversal)
-      route[1..route.size].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE }
+      false
     end
+  end
+  
+  def no_obstacles_on?(route)
+    route[1..route.size - 2].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE }
+  end
+
+  def target_is_enemy?(src, trg)
+    src.color != trg.color
+  end
+
+  def target_is_empty?(trg)
+    board[trg.rank][trg.file] == EMPTY_SQUARE
   end
 
   def enemy?(from, to) #trg_square_enemy?
@@ -138,25 +163,20 @@ class Board
   def piece_moves(from, to)
     src = board[from[1]][from[0]]
     trg = src.class.new(to[0], to[1], src.color)
+  # binding.pry
     if valid_move?(src, trg)
       if path_free?(src, trg)
         place(trg)
         clean(src)
         # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
         show
+        puts "You're in check" if in_check?(trg)
       else
-        if empty?(to)
-          puts "Invalid move: the path is not free"
-        elsif enemy?(from, to)
-          place(trg)
-          clean(src)
-          show
-        else
-          puts "Invalid move: the path is not free"
-        end
+        puts "Invalid move: the path is not free"
       end
+    else
+      puts "Invalid move"
     end
-    # route.each { |move| board[move[1]][move[0]] = '*' }
   end
 
   def route(node, route = [])
@@ -201,14 +221,45 @@ class Board
     board[piece.rank][piece.file] = EMPTY_SQUARE
   end
 
-  def find_pieces_by(input)
-    first_letter = input.split('').first
+  # def find_pieces_by(input)
+  #   first_letter = input.split('').first
+  #   list_of_pieces = []
+  #   board.each do |row|
+  #     row.each do |square|
+  #       list_of_pieces << square if square.name.eql?(first_letter) unless square == EMPTY_SQUARE
+  #     end
+  #   end
+  #   list_of_pieces
+  # end
+
+  def find_pieces_by(color)
     list_of_pieces = []
     board.each do |row|
       row.each do |square|
-        list_of_pieces << square if square.name.eql?(first_letter) unless square == EMPTY_SQUARE
+        list_of_pieces << square if square.color == color unless square == EMPTY_SQUARE
       end
     end
     list_of_pieces
+  end
+
+  def find_kings
+    list_of_pieces = []
+    board.each do |row|
+      row.each do |square|
+        list_of_pieces << square if square.name == 'K' unless square == EMPTY_SQUARE
+      end
+    end
+    list_of_pieces
+  end
+
+  def in_check?(trg)
+    current_player_color_pieces = find_pieces_by(trg.color)
+    enemy_king = find_kings.select { |king| king if king.color != trg.color }.first
+    attackers = current_player_color_pieces.select { |piece| piece if valid_move?(piece, enemy_king) && path_free?(piece, enemy_king) }
+    unless attackers.empty?
+      true
+    else
+      false
+    end
   end
 end
