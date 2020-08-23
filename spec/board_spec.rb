@@ -691,15 +691,18 @@ describe Board do
 
   describe "#in_check?" do
     let(:king) { King.new(4, 4, 'white') }
+    
     before do
       test.place(king)
+      # src = king
     end
     # context 'when a King is under immediate attack' do
     context 'when a King is under immediate Pawn\'s attack' do
       let(:pawn) { Pawn.new(3, 3, 'black') }
       it 'is in check' do
         test.place(pawn)
-        result = test.in_check?(pawn)
+        src = king
+        result = test.in_check?(src)
         expect(result).to eq(true)
       end
     end
@@ -708,7 +711,8 @@ describe Board do
       let(:rook) { Rook.new(4, 0, 'black') }
       it 'is in check' do
         test.place(rook)
-        result = test.in_check?(rook)
+        src = king
+        result = test.in_check?(src)
         expect(result).to eq(true)
       end
     end
@@ -717,7 +721,11 @@ describe Board do
       let(:bishop) { Bishop.new(1, 1, 'black') }
       it 'is in check' do
         test.place(bishop)
-        result = test.in_check?(bishop)
+        src = king
+        # src = bishop
+        # result = test.in_check?(bishop)
+        # result = test.in_check?
+        result = test.in_check?(src)
         expect(result).to eq(true)
       end
     end
@@ -726,7 +734,11 @@ describe Board do
       let(:knight) { Knight.new(2, 3, 'black') }
       it 'is in check' do
         test.place(knight)
-        result = test.in_check?(knight)
+        src = king
+        # src = knight
+        # result = test.in_check?(knight)
+        # result = test.in_check?
+        result = test.in_check?(src)
         expect(result).to eq(true)
       end
     end
@@ -735,7 +747,12 @@ describe Board do
       let(:queen) { Queen.new(0, 4, 'black') }
       it 'is in check' do
         test.place(queen)
-        result = test.in_check?(queen)
+        src = king
+        # src = queen
+        # result = test.in_check?(queen)
+        # result = test.in_check?
+        result = test.in_check?(src)
+        # result = test.in_check?(enemy_color(src))
         expect(result).to eq(true)
       end
     end
@@ -744,12 +761,19 @@ describe Board do
       let(:enemy_king) { King.new(5, 5, 'black') }
       it 'is in check' do
         test.place(enemy_king)
-        result = test.in_check?(enemy_king)
+        src = king
+        # src = enemy_king
+        # result = test.in_check?(enemy_king)
+        # result = test.in_check?
+        result = test.in_check?(src)
+        # result = test.in_check?(enemy_color(src))
         expect(result).to eq(true)
       end
     end
 
-    context 'when none of enemy pieces can attack King' do
+    # context 'when none of enemy pieces can attack King' do
+    context 'when King is not under attack' do
+
       let(:pawn) { Pawn.new(5, 2, 'black') }
       let(:rook) { Rook.new(1, 1, 'black') }
       let(:bishop) { Bishop.new(7, 2, 'black') }
@@ -762,44 +786,301 @@ describe Board do
         test.place(bishop)
         test.place(knight)
         test.place(queen)
-        result = test.in_check?(rook)
+        src = king
+        # src = pawn
+        # result = test.in_check?(rook)
+        result = test.in_check?(src)
+        # result = test.in_check?
+        # result = test.in_check?(enemy_color(src))
         expect(result).to eq(false)
       end
     end
 
-    context 'when an ally piece is defending King' do
+    # context 'when an ally piece is defending King' do
+    context 'when interposing an ally piece between the checking piece and the King' do
+
       let(:pawn) { Pawn.new(3, 3, 'white') }
       let(:queen) { Queen.new(1, 1, 'black') }
 
       it 'is not in check' do
         test.place(pawn)
         test.place(queen)
-        result = test.in_check?(queen)
+        src = king
+        # src = queen
+        # result = test.in_check?(queen)
+        # result = test.in_check?
+        result = test.in_check?(src)
+        # result = test.in_check?(enemy_color(src))
         expect(result).to eq(false)
       end
     end
 
-    context 'when King is hiding behind an enemy Pawn' do
+    # context 'when King is hiding behind an enemy Pawn' do
+    context 'when interposing an enemy piece between the checking piece and the King' do
       let(:pawn) { Pawn.new(4, 3, 'black') }
-      # let(:pawn) { Pawn.new(4, 3, 'white') }
-
-      # let(:queen) { Queen.new(4, 0, 'black') }
       let(:rook) { Rook.new(4, 0, 'black') }
-
 
       it 'is not in check' do
         test.place(pawn)
-        # test.place(queen)
         test.place(rook)
-        # result = test.in_check?(queen)
-        result = test.in_check?(rook)
+        src = king
+
+        # src = rook
+        # result = test.in_check?(rook)
+        # result = test.in_check?
+        result = test.in_check?(src)
+        # result = test.in_check?(enemy_color(src))
         expect(result).to eq(false)
       end
     end
+  end
 
-    context 'when a King is not under attack' do
-      it 'is not in check' do
+  describe "#no_legal_move_to_escape?(src)" do
+    context 'when King has no legal moves to escape check' do
+      #Blackburne's mate
+      let(:black_king) { King.new(6, 0, 'black') }
+      let(:rook) { Rook.new(5, 0, 'black') }
+      let(:bishop_one) { Bishop.new(7, 1, 'white') }
+      let(:bishop_two) { Bishop.new(1, 6, 'white') }
+      let(:knight) { Knight.new(6, 3, 'white') }
+  
+      before do
+        test.place(black_king)
+        test.place(rook)
+        test.place(bishop_one)
+        test.place(bishop_two)
+        test.place(knight)
+      end
+
+      it 'is checkmate' do
+        color = 'black'
+        result = test.no_legal_move_to_escape?(color)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when King has no legal moves to escape check' do
+      let(:black_king) { King.new(6, 0, 'black') }
+      let(:rook) { Rook.new(5, 0, 'black') }
+      let(:bishop_one) { Bishop.new(7, 1, 'white') }
+      let(:bishop_two) { Bishop.new(1, 6, 'white') }
+      let(:pawn) { Pawn.new(6, 3, 'white') }
+  
+      before do
+        test.place(black_king)
+        test.place(rook)
+        test.place(bishop_one)
+        test.place(bishop_two)
+        test.place(pawn)
+      end
+
+      it 'is not checkmate' do
+        color = 'black'
+        result = test.no_legal_move_to_escape?(color)
+        expect(result).to eq(false)
+      end
+    end
+  end
+
+  describe "#no_capture_moves?(src)" do
+    context 'when King can not capture to escape check' do
+      #Anderssen's mate
+      let(:black_king) { King.new(6, 0, 'black') }
+      let(:rook) { Rook.new(7, 0, 'white') }
+      let(:pawn) { Pawn.new(6, 1, 'white') }
+      let(:white_king) { King.new(5, 2, 'white') }
+  
+      before do
+        test.place(black_king)
+        test.place(rook)
+        test.place(pawn)
+        test.place(white_king)
+      end
+
+      it 'is checkmate' do
+        color = 'black'
+        result = test.no_capture_moves?(color)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when King can capture checking piece to escape check' do
+      let(:king) { King.new(6, 0, 'black') }
+      let(:rook) { Rook.new(7, 0, 'white') }
+      let(:queen) { Queen.new(6, 1, 'white') }
+  
+      before do
+        test.place(king)
+        test.place(rook)
+        test.place(queen)
+      end
+
+      it 'is not checkmate' do
+        color = 'black'
+        result = test.no_capture_moves?(color)
+        expect(result).to eq(false)
+      end
+    end
+  end
+
+  describe "#no_empty_squares_not_under_attack?(src)" do
+    context 'when there are no empty squares to escape check' do
+      let(:white_king) { King.new(7, 7, 'white') }
+      let(:black_king) { King.new(7, 5, 'black') }
+      let(:bishop_one) { Bishop.new(4, 5, 'black') }
+      let(:bishop_two) { Bishop.new(5, 5, 'black') }
+  
+      before do
+        test.place(white_king)
+        test.place(black_king)
+        test.place(bishop_one)
+        test.place(bishop_two)
+      end
+
+      it 'is checkmate' do
+        color = 'white'
+        result = test.no_empty_squares_not_under_attack?(color)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when King can move to empty square to escape check' do
+      let(:white_king) { King.new(7, 7, 'white') }
+      let(:black_king) { King.new(7, 5, 'black') }
+      let(:bishop_two) { Bishop.new(5, 5, 'black') }
+  
+      before do
+        test.place(white_king)
+        test.place(black_king)
+        test.place(bishop_two)
+      end
+
+      it 'is not checkmate' do
+        color = 'white'
+        result = test.no_empty_squares_not_under_attack?(color)
+        expect(result).to eq(false)
+      end
+    end
+  end
+
+  describe "#ally_can_capture_checking_piece?" do
+    let(:black_king) { King.new(6, 0, 'black') }
+    let(:rook) { Rook.new(3, 0, 'white') }
+    let(:pawn_f7) { Pawn.new(5, 1, 'black') }
+    let(:pawn_g7) { Pawn.new(6, 1, 'black') }
+    let(:pawn_h7) { Pawn.new(7, 1, 'black') }
+
+    before do
+      test.place(black_king)
+      test.place(rook)
+      test.place(pawn_f7)
+      test.place(pawn_g7)
+      test.place(pawn_h7)
+    end
+
+    context 'when no ally can capture a checking piece' do
+      it 'is checkmate' do
+        color = 'black'
+        result = test.ally_can_capture_checking_piece?(color)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when an ally can capture a checking piece' do
+      let(:queen) { Queen.new(3, 5, 'black') }
+
+      it 'is not checkmate' do
+        test.place(queen)
+        color = 'black'
+        result = test.ally_can_capture_checking_piece?(color)
+        expect(result).to eq(false)
+      end
+    end
+  end
+
+  describe "#no_ally_can_block_checking_piece?" do
+    context 'when no ally can block a checking piece path' do
+      let(:black_king) { King.new(6, 0, 'black') }
+      let(:rook) { Rook.new(3, 0, 'white') }
+      let(:pawn_f7) { Pawn.new(5, 1, 'black') }
+      let(:pawn_g7) { Pawn.new(6, 1, 'black') }
+      let(:pawn_h7) { Pawn.new(7, 1, 'black') }
+
+      before do
+        test.place(black_king)
+        test.place(rook)
+        test.place(pawn_f7)
+        test.place(pawn_g7)
+        test.place(pawn_h7)
+      end
+
+      it 'is checkmate' do
+        color = 'black'
+        result = test.no_ally_can_block_checking_piece?(color)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when an ally can block a checking piece path' do
+      let(:black_king) { King.new(7, 0, 'black') }
+      let(:bishop) { Bishop.new(7, 1, 'black') }
+      let(:rook_one) { Rook.new(6, 7, 'white') }
+      let(:rook_two) { Rook.new(1, 0, 'white') }
+
+      before do
+        test.place(black_king)
+        test.place(bishop)
+        test.place(rook_one)
+        test.place(rook_two)
+      end
       
+      it 'is not checkmate' do
+        color = 'black'
+        result = test.no_ally_can_block_checking_piece?(color)
+        expect(result).to eq(false)
+      end
+    end
+  end
+
+  describe "#checkmate?" do
+    context 'when there is no legal move to escape check' do
+      #Corner mate
+      let(:black_king) { King.new(7, 0, 'black') }
+      let(:black_pawn) { Pawn.new(7, 1, 'black') }
+      let(:knight) { Knight.new(5, 1, 'white') }
+      let(:rook) { Rook.new(6, 7, 'white') }
+
+      before do
+        test.place(black_king)
+        test.place(black_pawn)
+        test.place(knight)
+        test.place(rook)
+      end
+
+      it 'is checkmate' do
+        color = 'black'
+        result = test.checkmate?(color)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when there is a way to escape check' do
+      let(:black_king) { King.new(7, 0, 'black') }
+      let(:white_pawn) { Pawn.new(7, 1, 'white') }
+      let(:knight) { Knight.new(5, 1, 'white') }
+      let(:rook) { Rook.new(6, 7, 'white') }
+
+      before do
+        test.place(black_king)
+        test.place(white_pawn)
+        test.place(knight)
+        test.place(rook)
+      end
+
+      it 'is not checkmate' do
+        color = 'black'
+        result = test.checkmate?(color)
+        expect(result).to eq(false)
       end
     end
   end

@@ -18,9 +18,6 @@ class Board
   #create a separate test file & copy-paste
   #refactor heavily!!!(or it's better wait and then refactor)
 
-  #define #in_check? for the King
-
-  
   def valid_move?(src, trg)
     if src.class == Pawn
       if (src.rank - trg.rank).abs == 1 && src.file == trg.file &&
@@ -117,7 +114,7 @@ class Board
     traversal = bfs_traversal(src, trg)
     route = route(traversal)
   # bnding.pry
-    if target_is_enemy?(src, trg) || target_is_empty?(trg)
+    if target_is_empty?(trg) || target_is_enemy?(src, trg)
       if route.size <= 2
         true
       elsif no_obstacles_on?(route)
@@ -135,7 +132,7 @@ class Board
   end
 
   def target_is_enemy?(src, trg)
-    src.color != trg.color
+    src.color != board[trg.rank][trg.file].color
   end
 
   def target_is_empty?(trg)
@@ -166,11 +163,21 @@ class Board
   # binding.pry
     if valid_move?(src, trg)
       if path_free?(src, trg)
-        place(trg)
-        clean(src)
-        # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
-        show
-        puts "You're in check" if in_check?(trg)
+        # if !in_check?(src) || src.is_a?(King)
+        if !in_check?(src) || getting_out_of_check?(src, trg)
+        # unless in_check?(src)
+          place(trg)
+          clean(src)
+          # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
+          show
+        else
+  # binding.pry
+          if checkmate?(src.color)
+            puts "Checkmate"
+          else
+            puts "Invalid move: You're in check"
+          end
+        end
       else
         puts "Invalid move: the path is not free"
       end
@@ -252,14 +259,123 @@ class Board
     list_of_pieces
   end
 
-  def in_check?(trg)
-    current_player_color_pieces = find_pieces_by(trg.color)
-    enemy_king = find_kings.select { |king| king if king.color != trg.color }.first
-    attackers = current_player_color_pieces.select { |piece| piece if valid_move?(piece, enemy_king) && path_free?(piece, enemy_king) }
-    unless attackers.empty?
+  def in_check?(src)
+    src.color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
+    opponent_player_color_pieces = find_pieces_by(enemy_color)
+    current_player_king = find_kings.select { |king| king if king.color == src.color }.first
+    attackers = opponent_player_color_pieces.select { |piece| piece if valid_move?(piece, current_player_king) && path_free?(piece, current_player_king) }
+    # return true unless attackers.empty? # -- future refactoring - change tests with 'false' for 'to be_nil'
+    unless attackers.empty? 
       true
     else
       false
     end
+  end
+
+  # def getting_out_of_check?(src, trg)
+  #   place(trg)
+  #   clean(src)
+  #   if !in_check?(src)
+  #     place(src)
+  #     clean(trg)
+  #     true
+  #   else
+  #     place(src)
+  #     clean(trg)
+  #     false
+  #   end
+  # end
+
+  def getting_out_of_check?(src, trg)
+    original_trg = board[trg.rank][trg.file]
+    trg = src.class.new(trg.file, trg.rank, src.color)
+    place(trg)
+    clean(src)
+    if !in_check?(src)
+      place(src)
+      board[trg.rank][trg.file] = original_trg
+      true
+    else
+      place(src)
+      board[trg.rank][trg.file] = original_trg
+      false
+    end
+  end
+
+  def checkmate?(color)
+    no_legal_move_to_escape?(color) &&
+    !ally_can_capture_checking_piece?(color) &&
+    no_ally_can_block_checking_piece?(color)
+  end
+
+  def no_legal_move_to_escape?(color)
+    current_player_color_pieces = find_pieces_by(color)
+    current_player_king = find_kings.select { |king| king if king.color == color }.first
+    current_player_king.class::MOVES.map { |row, col| [row + current_player_king.file, col + current_player_king.rank] }
+                                    .select { |row, col| row.between?(0,7) && col.between?(0,7) }
+                                    .select { |row, col| board[col][row] == EMPTY_SQUARE || board[col][row].color != current_player_king.color }
+                                    .map { |coords| King.new(*coords, current_player_king.color) }
+                                    .none? { |move| getting_out_of_check?(current_player_king, move) }
+  end
+
+  def no_capture_moves?(color) #Can delete because inside #no_legal_move_to_escape
+    current_player_color_pieces = find_pieces_by(color)
+    current_player_king = find_kings.select { |king| king if king.color == color }.first
+    current_player_king.class::MOVES.map { |row, col| [row + current_player_king.file, col + current_player_king.rank] }
+                                    .select { |row, col| row.between?(0,7) && col.between?(0,7) }
+                                    .select { |row, col| board[col][row].color != current_player_king.color unless board[col][row] == EMPTY_SQUARE }
+                                    .map { |coords| King.new(*coords, current_player_king.color) }
+                                    .none? { |move| getting_out_of_check?(current_player_king, move) }
+  end
+
+  def no_empty_squares_not_under_attack?(color) #no_safe_squares #Can delete because inside #no_legal_move_to_escape
+    current_player_color_pieces = find_pieces_by(color)
+    current_player_king = find_kings.select { |king| king if king.color == color }.first
+    current_player_king.class::MOVES.map { |row, col| [row + current_player_king.file, col + current_player_king.rank] }
+                                    .select { |row, col| row.between?(0,7) && col.between?(0,7) }
+                                    .select { |row, col| board[col][row] == EMPTY_SQUARE }
+                                    .map { |coords| King.new(*coords, current_player_king.color) }
+                                    .none? { |move| getting_out_of_check?(current_player_king, move) }
+  end
+
+  def ally_can_capture_checking_piece?(color)
+    current_player_color_pieces = find_pieces_by(color)
+    current_player_king = find_kings.select { |king| king if king.color == color }.first
+
+    color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
+    opponent_player_color_pieces = find_pieces_by(enemy_color)
+    attackers = opponent_player_color_pieces.select { |piece| piece if valid_move?(piece, current_player_king) && path_free?(piece, current_player_king) }
+
+    defenders = []
+    current_player_color_pieces.each do |piece|
+      attackers.each do |attacker|
+        defenders << piece if valid_move?(piece, attacker) && path_free?(piece, attacker)
+      end
+    end
+    
+    defenders.none? { |defender| attackers.each { |attacker| getting_out_of_check?(defender, attacker) } }
+  end
+
+  def no_ally_can_block_checking_piece?(color)
+    current_player_color_pieces = find_pieces_by(color)
+    current_player_king = find_kings.select { |king| king if king.color == color }.first
+
+    color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
+    opponent_player_color_pieces = find_pieces_by(enemy_color)
+    attackers = opponent_player_color_pieces.select { |piece| piece if valid_move?(piece, current_player_king) && path_free?(piece, current_player_king) }
+    
+    blockers = []
+    current_player_color_pieces.each do |piece|
+      attackers.each do |attacker|
+        traversal = bfs_traversal(attacker, current_player_king)
+        route = route(traversal)
+        route[1..route.size - 2].each do |square|
+          blockers << piece if valid_move?(piece, attacker.class.new(*square, attacker.color)) && 
+                               path_free?(piece, attacker.class.new(*square, attacker.color)) &&
+                               piece != current_player_king
+        end
+      end
+    end
+    blockers.empty?
   end
 end
