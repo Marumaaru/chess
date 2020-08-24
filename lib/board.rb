@@ -9,6 +9,82 @@ class Board
     @board = Array.new(SIZE) { Array.new(SIZE, EMPTY_SQUARE) }
   end
 
+  def populate_board
+    place_rooks
+    place_knights
+    place_bishops
+    place_queens
+    place_kings
+    place_white_pawns
+    place_black_pawns
+    # originals = save_originals
+  end
+
+  def place_rooks
+    place(Rook.new(0, 7, 'white'))
+    place(Rook.new(7, 7, 'white'))
+    place(Rook.new(0, 0, 'black'))
+    place(Rook.new(7, 0, 'black'))
+  end
+
+  def place_knights
+    place(Knight.new(1, 7, 'white'))
+    place(Knight.new(6, 7, 'white'))
+    place(Knight.new(1, 0, 'black'))
+    place(Knight.new(6, 0, 'black'))
+  end
+
+  def place_bishops
+    place(Bishop.new(2, 7, 'white'))
+    place(Bishop.new(5, 7, 'white'))
+    place(Bishop.new(2, 0, 'black'))
+    place(Bishop.new(5, 0, 'black'))
+  end
+
+  def place_queens
+    place(Queen.new(3, 7, 'white'))
+    place(Queen.new(3, 0, 'black'))
+  end
+
+  def place_kings
+    place(King.new(4, 7, 'white'))
+    place(King.new(4, 0, 'black'))
+  end
+
+  def place_white_pawns
+    place(Pawn.new(0, 6, 'white'))
+    place(Pawn.new(1, 6, 'white'))
+    place(Pawn.new(2, 6, 'white'))
+    place(Pawn.new(3, 6, 'white'))
+    place(Pawn.new(4, 6, 'white'))
+    place(Pawn.new(5, 6, 'white'))
+    place(Pawn.new(6, 6, 'white'))
+    place(Pawn.new(7, 6, 'white'))
+  end
+
+  def place_black_pawns
+    place(Pawn.new(0, 1, 'black'))
+    place(Pawn.new(1, 1, 'black'))
+    place(Pawn.new(2, 1, 'black'))
+    place(Pawn.new(3, 1, 'black'))
+    place(Pawn.new(4, 1, 'black'))
+    place(Pawn.new(5, 1, 'black'))
+    place(Pawn.new(6, 1, 'black'))
+    place(Pawn.new(7, 1, 'black'))
+  end
+
+  def save_originals
+    # @cloned = board
+    # original_white_king = board[7][4]
+    # original_black_king = board[0][4]
+    # original_white_kingside_rook = board[7][7]
+    # original_white_queenside_rook = board[7][0]
+    # original_black_kingside_rook = board[0][7]
+    # original_black_queenside_rook = board[0][0]
+    @originals = [board[7][4], board[0][4], board[7][7], board[7][0], board[0][7], board[0][0]]
+  end
+
+
   #define special moves: postponed
   #King: castling
   #Pawn: en passant and promotion
@@ -111,13 +187,11 @@ class Board
   # end
 
   def path_free?(src, trg)
-    traversal = bfs_traversal(src, trg)
-    route = route(traversal)
   # bnding.pry
     if target_is_empty?(trg) || target_is_enemy?(src, trg)
-      if route.size <= 2
-        true
-      elsif no_obstacles_on?(route)
+      # if route.size <= 2
+        # true
+      if no_obstacles_between?(src, trg)
         true
       else
         false
@@ -127,8 +201,15 @@ class Board
     end
   end
   
-  def no_obstacles_on?(route)
-    route[1..route.size - 2].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE }
+  def no_obstacles_between?(src, trg)
+    traversal = bfs_traversal(src, trg)
+    route = route(traversal)
+# binding.pry
+    if route.size <= 2
+      true
+    else
+      route[1..route.size - 2].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE }
+    end
   end
 
   def target_is_enemy?(src, trg)
@@ -163,15 +244,12 @@ class Board
   # binding.pry
     if valid_move?(src, trg)
       if path_free?(src, trg)
-        # if !in_check?(src) || src.is_a?(King)
-        if !in_check?(src) || getting_out_of_check?(src, trg)
-        # unless in_check?(src)
+        if !in_check?(src.color) || getting_out_of_check?(src, trg)
           place(trg)
           clean(src)
           # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
           show
         else
-  # binding.pry
           if checkmate?(src.color)
             puts "Checkmate"
           else
@@ -259,10 +337,10 @@ class Board
     list_of_pieces
   end
 
-  def in_check?(src)
-    src.color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
+  def in_check?(color)
+    color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
     opponent_player_color_pieces = find_pieces_by(enemy_color)
-    current_player_king = find_kings.select { |king| king if king.color == src.color }.first
+    current_player_king = find_kings.select { |king| king if king.color == color }.first
     attackers = opponent_player_color_pieces.select { |piece| piece if valid_move?(piece, current_player_king) && path_free?(piece, current_player_king) }
     # return true unless attackers.empty? # -- future refactoring - change tests with 'false' for 'to be_nil'
     unless attackers.empty? 
@@ -291,7 +369,7 @@ class Board
     trg = src.class.new(trg.file, trg.rank, src.color)
     place(trg)
     clean(src)
-    if !in_check?(src)
+    if !in_check?(src.color)
       place(src)
       board[trg.rank][trg.file] = original_trg
       true
@@ -304,7 +382,7 @@ class Board
 
   def checkmate?(color)
     no_legal_move_to_escape?(color) &&
-    !ally_can_capture_checking_piece?(color) &&
+    no_ally_can_capture_checking_piece?(color) &&
     no_ally_can_block_checking_piece?(color)
   end
 
@@ -338,7 +416,7 @@ class Board
                                     .none? { |move| getting_out_of_check?(current_player_king, move) }
   end
 
-  def ally_can_capture_checking_piece?(color)
+  def no_ally_can_capture_checking_piece?(color)
     current_player_color_pieces = find_pieces_by(color)
     current_player_king = find_kings.select { |king| king if king.color == color }.first
 
@@ -365,6 +443,7 @@ class Board
     attackers = opponent_player_color_pieces.select { |piece| piece if valid_move?(piece, current_player_king) && path_free?(piece, current_player_king) }
     
     blockers = []
+  # binding.pry #could be solved with .none? or .any? like in #path_safe?
     current_player_color_pieces.each do |piece|
       attackers.each do |attacker|
         traversal = bfs_traversal(attacker, current_player_king)
@@ -377,5 +456,117 @@ class Board
       end
     end
     blockers.empty?
+  end
+
+  #DRY to unique #castling(color)
+  # def short_castling(color)
+  #   if color == 'white'
+  #     king_original_pos = board[7][4]
+  #     rook_kingside_original_pos = board[7][7]
+  #     place(King.new(6, 7, color))
+  #     place(Rook.new(5, 7, color))
+  #     clean(king_original_pos)
+  #     clean(rook_kingside_original_pos)
+  #   else
+  #     king_original_pos = board[0][4]
+  #     rook_kingside_original_pos = board[0][7]
+  #     place(King.new(6, 0, color))
+  #     place(Rook.new(5, 0, color))
+  #     clean(king_original_pos)
+  #     clean(rook_kingside_original_pos)
+  #   end
+  # end
+
+  # def long_castling(color)
+  #   if color == 'white'
+  #     king_original_pos = board[7][4]
+  #     rook_queenside_original_pos = board[7][0]
+  #     place(King.new(2, 7, color))
+  #     place(Rook.new(3, 7, color))
+  #     clean(king_original_pos)
+  #     clean(rook_kingside_original_pos)
+  #   else
+  #     king_original_pos = board[0][4]
+  #     rook_queenside_original_pos = board[0][0]
+  #     place(King.new(2, 0, color))
+  #     place(Rook.new(3, 0, color))
+  #     clean(king_original_pos)
+  #     clean(rook_queenside_original_pos)
+  #   end
+  # end
+
+  def castling(color, input)
+    king = find_king(color)
+    rook = find_rook(color, input)
+    if input == '00'
+      place(King.new(king.file + 2, king.rank, color))
+      place(Rook.new(rook.file - 2, rook.rank, color))
+    else
+      place(King.new(king.file - 2, king.rank, color))
+      place(Rook.new(rook.file + 3, rook.rank, color))
+    end
+    clean(king)
+    clean(rook)
+  end
+
+  # def perform_switch(king, rook)
+
+  # end
+
+  def castling_permissible?(color, input)
+    king = find_king(color)
+    rook = find_rook(color, input)
+    no_obstacles_between?(rook, king) &&
+    path_safe?(rook, king) &&
+    first_move?(king) &&
+    first_move?(rook)
+  end
+
+  def path_safe?(src, trg)
+    src.color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
+    opponent_player_color_pieces = find_pieces_by(enemy_color)
+
+    traversal = bfs_traversal(src, trg)
+    route = route(traversal)
+
+    opponent_player_color_pieces.none? do |piece| 
+      route.each do |square|
+        piece if valid_move?(piece, src.class.new(*square, src.color)) && 
+                 path_free?(piece, src.class.new(*square, src.color))
+      end
+    end
+  end
+
+  # def king_first_move?(king)
+  #   original_king = @originals.flatten.find { |square| square.is_a?(King) && square.color == king.color }
+  #   original_king.eql?(king)
+  # end
+
+  # def rook_first_move?(rook)
+  #   original_rook = @originals.flatten.find { |square| square.is_a?(Rook) && square.color == rook.color && square.file == rook.file }
+  #   original_rook.eql?(rook)
+  # end
+
+  def first_move?(piece) #do not like original (maybe INITIAL) and square here
+    original = @originals.flatten.find do |square| 
+      square.is_a?(piece.class) && 
+      square.color == piece.color &&
+      square.file == piece.file
+    end
+    original.eql?(piece)
+  end
+
+  def find_king(color)
+    board.flatten.find { |square| square.is_a?(King) && square.color == color }
+  end
+
+  #magic numbers 7 and 0
+  def find_rook(color, input)
+    rooks = board.flatten.find_all { |square| square.is_a?(Rook) && square.color == color }
+    if input == '00'
+      rooks.find { |rook| rook if rook.file == 7 }
+    else
+      rooks.find { |rook| rook if rook.file == 0 }
+    end
   end
 end

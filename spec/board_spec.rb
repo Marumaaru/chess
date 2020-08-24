@@ -701,8 +701,8 @@ describe Board do
       let(:pawn) { Pawn.new(3, 3, 'black') }
       it 'is in check' do
         test.place(pawn)
-        src = king
-        result = test.in_check?(src)
+        color = 'white'
+        result = test.in_check?(color)
         expect(result).to eq(true)
       end
     end
@@ -711,8 +711,8 @@ describe Board do
       let(:rook) { Rook.new(4, 0, 'black') }
       it 'is in check' do
         test.place(rook)
-        src = king
-        result = test.in_check?(src)
+        color = 'white'
+        result = test.in_check?(color)
         expect(result).to eq(true)
       end
     end
@@ -721,11 +721,8 @@ describe Board do
       let(:bishop) { Bishop.new(1, 1, 'black') }
       it 'is in check' do
         test.place(bishop)
-        src = king
-        # src = bishop
-        # result = test.in_check?(bishop)
-        # result = test.in_check?
-        result = test.in_check?(src)
+        color = 'white'
+        result = test.in_check?(color)
         expect(result).to eq(true)
       end
     end
@@ -735,10 +732,8 @@ describe Board do
       it 'is in check' do
         test.place(knight)
         src = king
-        # src = knight
-        # result = test.in_check?(knight)
-        # result = test.in_check?
-        result = test.in_check?(src)
+        color = 'white'
+        result = test.in_check?(color)
         expect(result).to eq(true)
       end
     end
@@ -747,12 +742,8 @@ describe Board do
       let(:queen) { Queen.new(0, 4, 'black') }
       it 'is in check' do
         test.place(queen)
-        src = king
-        # src = queen
-        # result = test.in_check?(queen)
-        # result = test.in_check?
-        result = test.in_check?(src)
-        # result = test.in_check?(enemy_color(src))
+        color = 'white'
+        result = test.in_check?(color)
         expect(result).to eq(true)
       end
     end
@@ -761,12 +752,8 @@ describe Board do
       let(:enemy_king) { King.new(5, 5, 'black') }
       it 'is in check' do
         test.place(enemy_king)
-        src = king
-        # src = enemy_king
-        # result = test.in_check?(enemy_king)
-        # result = test.in_check?
-        result = test.in_check?(src)
-        # result = test.in_check?(enemy_color(src))
+        color = 'white'
+        result = test.in_check?(color)
         expect(result).to eq(true)
       end
     end
@@ -786,12 +773,8 @@ describe Board do
         test.place(bishop)
         test.place(knight)
         test.place(queen)
-        src = king
-        # src = pawn
-        # result = test.in_check?(rook)
-        result = test.in_check?(src)
-        # result = test.in_check?
-        # result = test.in_check?(enemy_color(src))
+        color = 'white'
+        result = test.in_check?(color)
         expect(result).to eq(false)
       end
     end
@@ -805,12 +788,8 @@ describe Board do
       it 'is not in check' do
         test.place(pawn)
         test.place(queen)
-        src = king
-        # src = queen
-        # result = test.in_check?(queen)
-        # result = test.in_check?
-        result = test.in_check?(src)
-        # result = test.in_check?(enemy_color(src))
+        color = 'white'
+        result = test.in_check?(color)
         expect(result).to eq(false)
       end
     end
@@ -823,13 +802,8 @@ describe Board do
       it 'is not in check' do
         test.place(pawn)
         test.place(rook)
-        src = king
-
-        # src = rook
-        # result = test.in_check?(rook)
-        # result = test.in_check?
-        result = test.in_check?(src)
-        # result = test.in_check?(enemy_color(src))
+        color = 'white'
+        result = test.in_check?(color)
         expect(result).to eq(false)
       end
     end
@@ -981,7 +955,7 @@ describe Board do
     context 'when no ally can capture a checking piece' do
       it 'is checkmate' do
         color = 'black'
-        result = test.ally_can_capture_checking_piece?(color)
+        result = test.no_ally_can_capture_checking_piece?(color)
         expect(result).to eq(true)
       end
     end
@@ -992,7 +966,7 @@ describe Board do
       it 'is not checkmate' do
         test.place(queen)
         color = 'black'
-        result = test.ally_can_capture_checking_piece?(color)
+        result = test.no_ally_can_capture_checking_piece?(color)
         expect(result).to eq(false)
       end
     end
@@ -1048,7 +1022,7 @@ describe Board do
       let(:black_king) { King.new(7, 0, 'black') }
       let(:black_pawn) { Pawn.new(7, 1, 'black') }
       let(:knight) { Knight.new(5, 1, 'white') }
-      let(:rook) { Rook.new(6, 7, 'white') }
+      let(:rook) { Rook.new(6, 7, 'white') }  
 
       before do
         test.place(black_king)
@@ -1080,6 +1054,239 @@ describe Board do
       it 'is not checkmate' do
         color = 'black'
         result = test.checkmate?(color)
+        expect(result).to eq(false)
+      end
+    end
+  end
+
+  describe "#short_castling" do
+    let(:white_king) { King.new(4, 7, 'white') }
+    let(:black_king) { King.new(4, 0, 'black') }
+    let(:white_rook_kingside) { Rook.new(7, 7, 'white') }
+    let(:white_rook_queenside) { Rook.new(0, 7, 'white') }
+    let(:black_rook_kingside) { Rook.new(7, 0, 'black') }
+    let(:black_rook_queenside) { Rook.new(0, 0, 'black') }
+
+    before do
+      test.place(white_king)
+      test.place(black_king)
+      test.place(white_rook_kingside)
+      test.place(white_rook_queenside)
+      test.place(black_rook_kingside)
+      test.place(black_rook_queenside)
+    end
+
+    context 'when King is short castling' do
+      color = 'white'
+      input = '00'
+
+      it 'places King two squares towards a rook kingside' do
+        test.castling(color, input)
+        new_pos = test.board[7][6]
+        expect(new_pos.class).to eq(King)
+      end
+
+      it 'places Rook on the last square the King just crossed' do
+        test.castling(color, input)
+        new_pos = test.board[7][5]
+        expect(new_pos.class).to eq(Rook)
+      end
+
+      it 'removes King from its original position' do
+        test.castling(color, input)
+        original_pos = test.board[7][4]
+        expect(original_pos).to eq(' ')
+      end
+
+      it 'removes Rook from its original position' do
+        test.castling(color, input)
+        original_pos = test.board[7][7]
+        expect(original_pos).to eq(' ')
+      end
+    end
+  end
+  
+  describe "#long_castling" do
+    let(:white_king) { King.new(4, 7, 'white') }
+    let(:black_king) { King.new(4, 0, 'black') }
+    let(:white_rook_kingside) { Rook.new(7, 7, 'white') }
+    let(:white_rook_queenside) { Rook.new(0, 7, 'white') }
+    let(:black_rook_kingside) { Rook.new(7, 0, 'black') }
+    let(:black_rook_queenside) { Rook.new(0, 0, 'black') }
+  
+    before do
+      test.place(white_king)
+      test.place(black_king)
+      test.place(white_rook_kingside)
+      test.place(white_rook_queenside)
+      test.place(black_rook_kingside)
+      test.place(black_rook_queenside)
+    end
+    
+    context 'when King is long castling' do
+      color = 'black'
+      input = '000'
+
+      it 'places King two squares towards a rook queenside' do
+        test.castling(color, input)
+        new_pos = test.board[0][2]
+        expect(new_pos.class).to eq(King)
+      end
+
+      it 'places Rook on the last square the King just crossed' do
+        test.castling(color, input)
+        new_pos = test.board[0][3]
+        expect(new_pos.class).to eq(Rook)
+      end
+
+      it 'removes King from its original position' do
+        test.castling(color, input)
+        original_pos = test.board[0][4]
+        expect(original_pos).to eq(' ')
+      end
+
+      it 'removes Rook from its original position' do
+        test.castling(color, input)
+        original_pos = test.board[0][0]
+        expect(original_pos).to eq(' ')
+      end
+    end
+  end
+
+  describe "#castling_permissible?(color)" do
+
+    let(:white_king) { King.new(4, 7, 'white') }
+    let(:white_rook_kingside) { Rook.new(7, 7, 'white') }
+    let(:white_rook_queenside) { Rook.new(0, 7, 'white') }
+  
+    before do
+      test.place(white_king)
+      test.place(white_rook_kingside)
+      test.place(white_rook_queenside)
+      test.save_originals
+    end
+
+    context 'when King has not moved previously during the game' do
+      it 'is permissible' do
+        input = '00'
+        color = 'white'
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when King has moved previously during the game' do
+      let(:new_king) { King.new(4, 7, 'white') }
+
+      it 'is not permissible' do 
+        input = '00'
+        color = 'white'
+        test.place(new_king)
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when Rook has not moved previously during the game' do
+      it 'is permissible' do
+        input = '00'
+        color = 'white'
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when Rook has moved previously during the game' do
+      let(:new_rook) { Rook.new(7, 7, 'white') }
+
+      it 'is not permissible' do
+        input = '00'
+        color = 'white'
+        test.place(new_rook)
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when there are no pieces between King and Rook' do
+      it 'is permissible' do 
+        input = '00'
+        color = 'white'
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when there are pieces between King and Rook' do
+      let(:pawn) { Pawn.new(6, 7, 'white') }
+      it 'is not permissible' do 
+        input = '00'
+        color = 'white'
+        test.place(pawn)
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when King is not in check' do
+      it 'is permissible' do 
+        input = '00'
+        color = 'white'
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when King is in check' do
+      let(:queen) { Queen.new(4, 4, 'black') }
+
+      it 'is not permissible' do
+        test.place(queen)
+        input = '00'
+        color = 'white'
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when King does not pass through a square under attack' do
+      it 'is permissible' do 
+        input = '00'
+        color = 'white'
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when King passes through a square under attack' do
+      let(:queen) { Queen.new(5, 4, 'black') }
+
+      it 'is not permissible' do 
+        test.place(queen)
+        input = '00'
+        color = 'white'
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when King does not end up in check' do
+      it 'is permissible' do 
+        input = '00'
+        color = 'white'
+        result = test.castling_permissible?(color, input)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when King ends up in check' do
+      let(:queen) { Queen.new(6, 4, 'black') }
+
+      it 'is not permissible' do
+        test.place(queen)
+        input = '00'
+        color = 'white'
+        result = test.castling_permissible?(color, input)
         expect(result).to eq(false)
       end
     end
