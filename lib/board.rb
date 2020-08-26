@@ -1,12 +1,13 @@
 require 'pry'
 class Board
-  attr_reader :board
+  attr_reader :board, :history
   
   SIZE = 8
   EMPTY_SQUARE = ' '
 
   def initialize
     @board = Array.new(SIZE) { Array.new(SIZE, EMPTY_SQUARE) }
+    @history = []
   end
 
   def populate_board
@@ -122,10 +123,28 @@ class Board
           false
         end
       elsif (src.rank - trg.rank).abs == (src.file - trg.file).abs &&
-            (src.rank - trg.rank).abs == 1 && #otherwise can slide diagonally
-            board[trg.rank][trg.file] != EMPTY_SQUARE
-        unless board[trg.rank][trg.file].color == src.color
-        # if board[trg.rank][trg.file].color != src.color
+            (src.rank - trg.rank).abs == 1 #&& otherwise can slide diagonally
+            # board[trg.rank][trg.file] != EMPTY_SQUARE
+        # unless board[trg.rank][trg.file].color == src.color
+        if board[trg.rank][trg.file] != EMPTY_SQUARE && 
+          board[trg.rank][trg.file].color != src.color
+          if src.color == 'white'
+            if (src.rank - trg.rank) > 0
+              true
+            else
+              # puts "Invalid move"
+              false
+            end
+          elsif src.color == 'black'
+            if (src.rank - trg.rank) < 0
+              true
+            else
+              # puts "Invalid move"
+              false
+            end
+          end
+        elsif board[trg.rank][trg.file] == EMPTY_SQUARE && 
+              en_passant?(src, trg)
           true
         else
           # puts "Invalid move"
@@ -187,7 +206,6 @@ class Board
   # end
 
   def path_free?(src, trg)
-  # bnding.pry
     if target_is_empty?(trg) || target_is_enemy?(src, trg)
       # if route.size <= 2
         # true
@@ -247,6 +265,8 @@ class Board
         if !in_check?(src.color) || getting_out_of_check?(src, trg)
           place(trg)
           clean(src)
+          clean_adjacent(src, trg) if en_passant?(src, trg)
+          history << [from, to]
           # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
           show
         else
@@ -509,6 +529,27 @@ class Board
     clean(rook)
   end
 
+  #IDEA FOR REFACTORING
+  # if input == '00'
+  #   short_castling(king, rook, color)
+  # else
+  #   long_castling(king, rook)
+  # end
+
+  # def short_castling(king, rook, color)
+  #   place(King.new(king.file + 2, king.rank, color))
+  #   place(Rook.new(rook.file - 2, rook.rank, color))
+  #   clean(king)
+  #   clean(rook)
+  # end
+
+  # def long_castling(king, rook, color)
+  #   place(King.new(king.file - 2, king.rank, color))
+  #   place(Rook.new(rook.file + 3, rook.rank, color))
+  #   clean(king)
+  #   clean(rook)
+  # end
+
   # def perform_switch(king, rook)
 
   # end
@@ -556,6 +597,15 @@ class Board
     original.eql?(piece)
   end
 
+  #WAS AN IDEA! NOT very good but elegant
+  #it adds an additional square to the path
+  #adds a square from the piece has arrived previsouly
+  #i.e. parent
+
+  # def first_move?(piece)
+  #   piece.parent.nil?
+  # end
+
   def find_king(color)
     board.flatten.find { |square| square.is_a?(King) && square.color == color }
   end
@@ -569,4 +619,84 @@ class Board
       rooks.find { |rook| rook if rook.file == 0 }
     end
   end
+
+  def en_passant?(src, trg)
+    correct_rank?(src) && 
+    adjacent?(src) && 
+    just_double_moved?(src) &&
+    capture?(src, trg)
+  end
+
+  def correct_rank?(src)
+    src.rank == 3 || src.rank == 4
+  end
+
+  def adjacent?(src)
+    src.color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
+    left_adjacent = board[src.rank][src.file - 1]
+    right_adjacent = board[src.rank][src.file + 1]
+    #left_adjacent.is_a?(Pawn)
+    (left_adjacent != EMPTY_SQUARE && left_adjacent.color == enemy_color) ||
+     (right_adjacent != EMPTY_SQUARE && right_adjacent.color == enemy_color)
+  end
+
+  def just_double_moved?(src)
+    left_adjacent = board[src.rank][src.file - 1]
+    right_adjacent = board[src.rank][src.file + 1]
+
+    last_trg_rank = @history.last.last.last
+    last_trg_file = @history.last.last.first
+    last_src_rank = @history.last.first.last
+    last_src_file = @history.last.first.first
+
+    # if (last_trg_rank - last_src_rank).abs == 2
+    #   if left_adjacent.is_a?(Pawn) &&
+    #     left_adjacent.rank == last_trg_rank
+    #     true
+    #   elsif right_adjacent.is_a?(Pawn) &&
+    #     right_adjacent.rank == last_trg_rank
+    #     true
+    #   else
+    #     false
+    #   end
+    # else
+    #   false
+    # end
+
+    (last_trg_rank - last_src_rank).abs == 2 &&
+    ((right_adjacent.is_a?(Pawn) && right_adjacent.rank == last_trg_rank) || 
+    (left_adjacent.is_a?(Pawn) && left_adjacent.rank == last_trg_rank))
+
+  end
+
+  def capture?(src, trg)
+    left_adjacent = board[src.rank][src.file - 1]
+    right_adjacent = board[src.rank][src.file + 1]
+    if left_adjacent != EMPTY_SQUARE
+      (trg.rank == left_adjacent.rank - 1 && trg.file == left_adjacent.file) ||
+      (trg.rank == left_adjacent.rank + 1 && trg.file == left_adjacent.file)
+    elsif right_adjacent != EMPTY_SQUARE
+      (trg.rank == right_adjacent.rank - 1 && trg.file == right_adjacent.file) ||
+      (trg.rank == right_adjacent.rank + 1 && trg.file == right_adjacent.file)
+    end
+  end
+
+  def clean_adjacent(src, trg)
+    left_adjacent = board[src.rank][src.file - 1]
+    right_adjacent = board[src.rank][src.file + 1]
+
+    if left_adjacent != EMPTY_SQUARE && trg.file == left_adjacent.file
+      clean(left_adjacent)
+    elsif right_adjacent != EMPTY_SQUARE && trg.file == right_adjacent.file
+      clean(right_adjacent)
+    end
+  end
+
+  # def promotion(trg)
+  #   if (trg.rank == 0 && trg.color == 'white') || (trg.rank == 7 && trg.color == 'black')
+  #   elsif (trg.rank == 0 && trg.color == 'white') || 
+  #     (trg.rank == 7 && trg.color == 'black')
+  #     promotion(src, trg)
+  # end
+
 end

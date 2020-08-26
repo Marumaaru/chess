@@ -1291,4 +1291,136 @@ describe Board do
       end
     end
   end
+
+  describe "#en_passant?" do
+    let(:attacking_white_pawn) { Pawn.new(5, 3, 'white') }
+    let(:trg) { Pawn.new(4, 2, 'white') }
+
+    before do 
+      test.place(attacking_white_pawn)
+      # test.place(attacking_black_pawn)
+    end
+
+    context 'when the capturing pawn is on its fifth rank' do
+      it 'is permissible' do
+        src = attacking_white_pawn
+        allow(test).to receive(:adjacent?).and_return(true)
+        allow(test).to receive(:just_double_moved?).and_return(true)
+        allow(test).to receive(:capture?).and_return(true)
+        result = test.en_passant?(src, trg)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when the capturing pawn is on its forth rank' do
+      let(:attacking_black_pawn) { Pawn.new(3, 4, 'black') }
+
+      it 'is permissible' do
+        test.place(attacking_black_pawn)
+        src = attacking_black_pawn
+        allow(test).to receive(:adjacent?).and_return(true)
+        allow(test).to receive(:just_double_moved?).and_return(true)
+        allow(test).to receive(:capture?).and_return(true)
+        result = test.en_passant?(src, trg)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when the capturing pawn is not on its forth or fifth rank' do
+      let(:pawn) { Pawn.new(5, 5, 'white') }
+
+      it 'is not permissible' do
+        test.place(pawn)
+        src = pawn
+        allow(test).to receive(:adjacent?).and_return(true)
+        result = test.en_passant?(src, trg)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when the captured pawn is on adjacent file to the attacking pawn' do
+      let(:captured_black_pawn) { Pawn.new(4, 3, 'black') }
+
+      it 'is permissible' do
+        test.place(captured_black_pawn)
+        allow(test).to receive(:just_double_moved?).and_return(true)
+        src = attacking_white_pawn
+        result = test.en_passant?(src, trg)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when the captured pawn is not adjacent to the attacking pawn' do
+      let(:captured_black_pawn) { Pawn.new(3, 3, 'black') }
+
+      it 'is not permissible' do
+        test.place(captured_black_pawn)
+        src = attacking_white_pawn
+        result = test.en_passant?(src, trg)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when the captured pawn has just performed a double-step move' do
+      let(:captured_black_pawn) { Pawn.new(4, 3, 'black') }
+
+      it 'is permissible' do
+        test.place(captured_black_pawn)
+        test.instance_variable_set(:@history, [[[4, 1], [4, 3]]])
+        src = attacking_white_pawn
+        result = test.en_passant?(src, trg)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when the captured pawn has not performed a double-step move' do
+      let(:captured_black_pawn) { Pawn.new(4, 3, 'black') }
+
+      it 'is not permissible' do
+        test.place(captured_black_pawn)
+        test.instance_variable_set(:@history, [[[4, 2], [4, 3]]])
+        src = attacking_white_pawn
+        result = test.en_passant?(src, trg)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when the capture is made on the move immediately after the enemy pawn makes the double-step move' do
+      let(:captured_black_pawn) { Pawn.new(4, 3, 'black') }
+
+      it 'is permissible' do
+        test.place(captured_black_pawn)
+        src = attacking_white_pawn
+        allow(test).to receive(:adjacent?).and_return(true)
+        allow(test).to receive(:just_double_moved?).and_return(true)
+        result = test.en_passant?(src, trg)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when the capture is not made on the move immediately after the enemy pawn makes the double-step move' do
+      let(:captured_black_pawn) { Pawn.new(4, 3, 'black') }
+
+      it 'is not permissible' do
+        test.place(captured_black_pawn)
+        src = attacking_white_pawn
+        wrong_trg = Pawn.new(5, 2, 'white')
+        allow(test).to receive(:adjacent?).and_return(true)
+        allow(test).to receive(:just_double_moved?).and_return(true)
+        result = test.en_passant?(src, wrong_trg)
+        expect(result).to eq(false)
+      end
+    end
+  end
+
+  # describe "#promotion" do
+  #   context 'when a pawn reaches the eighth rank' do
+  #     let(:pawn) { Pawn.new(4, 0, 'white') }
+
+  #     it 'is eligible for promotion' do 
+  #       result = test.promotion
+  #       expect(result).to eq(result)
+  #     end
+  #   end
+  # end
 end
