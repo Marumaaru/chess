@@ -266,6 +266,7 @@ class Board
           place(trg)
           clean(src)
           clean_adjacent(src, trg) if en_passant?(src, trg)
+          promote(trg) if promotion?(trg)
           history << [from, to]
           # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
           show
@@ -692,11 +693,32 @@ class Board
     end
   end
 
-  # def promotion(trg)
-  #   if (trg.rank == 0 && trg.color == 'white') || (trg.rank == 7 && trg.color == 'black')
-  #   elsif (trg.rank == 0 && trg.color == 'white') || 
-  #     (trg.rank == 7 && trg.color == 'black')
-  #     promotion(src, trg)
-  # end
+  def promotion?(trg) #eligible_for_promotion?(trg)
+    (trg.is_a?(Pawn) && trg.rank == 0 && trg.color == 'white') ||
+     (trg.is_a?(Pawn) && trg.rank == 7 && trg.color == 'black')
+  end
+
+  def promote(trg)
+    puts "You pawn is eligible for promotion, please insert \n'B' for Bishop, 'N' for Knight, 'R' for Rook, 'Q' for Queen"
+    input = gets.chomp
+    new_piece = work_promotion_input(input, trg)
+    place(new_piece)
+  end
+
+  def work_promotion_input(input, trg)
+    if input.upcase == 'B'
+      Bishop.new(trg.file, trg.rank, trg.color)
+    elsif input.upcase == 'N'
+      Knight.new(trg.file, trg.rank, trg.color)
+    elsif input.upcase == 'R'
+      Rook.new(trg.file, trg.rank, trg.color)
+    elsif input.upcase == 'Q'
+      Queen.new(trg.file, trg.rank, trg.color)
+    end
+  end
+
+  def stalemate?(color)
+    !in_check?(color) && no_legal_move_to_escape?(color)
+  end
 
 end

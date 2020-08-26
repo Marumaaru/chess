@@ -1413,14 +1413,72 @@ describe Board do
     end
   end
 
-  # describe "#promotion" do
-  #   context 'when a pawn reaches the eighth rank' do
-  #     let(:pawn) { Pawn.new(4, 0, 'white') }
+  describe "#promotion?" do
+    context 'when a pawn reaches the eighth rank' do
+      let(:pawn) { Pawn.new(4, 0, 'white') }
 
-  #     it 'is eligible for promotion' do 
-  #       result = test.promotion
-  #       expect(result).to eq(result)
+      it 'is eligible for promotion' do 
+        trg = pawn
+        result = test.promotion?(trg)
+        expect(result).to eq(true)
+      end
+    end
+  end
+
+  # describe "#promote(trg)" do
+  #   let(:pawn) { Pawn.new(4, 0, 'white') }
+
+  #   context 'when eligible for promotion' do
+  #     it 'replaces the pawn with the player\'s choice' do
+  #       trg = pawn
+  #       input = 'r'
+
+  #       result  = test.promote(trg).is_a?(Rook)
+  #       expect(result).to eq(true)
   #     end
   #   end
   # end
+
+  describe "#stalemate?" do
+    let(:black_king) { King.new(7, 0, 'black') }
+    let(:white_king) { King.new(5, 1, 'white') }
+    let(:queen) { Queen.new(6, 2, 'white') }
+
+    before do
+      test.place(black_king)
+      test.place(white_king)
+      test.place(queen)
+    end
+
+    context 'when player is not in check and there is no legal move' do
+      it 'is stalemate' do
+        color = 'black'
+        result = test.stalemate?(color)
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when player is in check and there is no legal move' do
+      let(:rook) { Rook.new(2, 0, 'white') }
+
+      it 'is not stalemate' do
+        test.place(rook)
+        color = 'black'
+        result = test.stalemate?(color)
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when player is not in check and there is legal move' do
+      
+      it 'is not stalemate' do
+        test.clean(queen)
+        color = 'black'
+        result = test.stalemate?(color)
+        expect(result).to eq(false)
+      end
+    end
+
+
+  end
 end
