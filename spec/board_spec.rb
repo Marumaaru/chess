@@ -1077,29 +1077,30 @@ describe Board do
     end
 
     context 'when King is short castling' do
+      let(:trg) { King.new(6, 7, 'white') }
       color = 'white'
-      input = '00'
+      # input = '00'
 
       it 'places King two squares towards a rook kingside' do
-        test.castling(color, input)
+        test.castling(color, trg)
         new_pos = test.board[7][6]
         expect(new_pos.class).to eq(King)
       end
 
       it 'places Rook on the last square the King just crossed' do
-        test.castling(color, input)
+        test.castling(color, trg)
         new_pos = test.board[7][5]
         expect(new_pos.class).to eq(Rook)
       end
 
       it 'removes King from its original position' do
-        test.castling(color, input)
+        test.castling(color, trg)
         original_pos = test.board[7][4]
         expect(original_pos).to eq(' ')
       end
 
       it 'removes Rook from its original position' do
-        test.castling(color, input)
+        test.castling(color, trg)
         original_pos = test.board[7][7]
         expect(original_pos).to eq(' ')
       end
@@ -1124,29 +1125,30 @@ describe Board do
     end
     
     context 'when King is long castling' do
+      let(:trg) { King.new(2, 0, 'black') }
       color = 'black'
-      input = '000'
+      # input = '000'
 
       it 'places King two squares towards a rook queenside' do
-        test.castling(color, input)
+        test.castling(color, trg)
         new_pos = test.board[0][2]
         expect(new_pos.class).to eq(King)
       end
 
       it 'places Rook on the last square the King just crossed' do
-        test.castling(color, input)
+        test.castling(color, trg)
         new_pos = test.board[0][3]
         expect(new_pos.class).to eq(Rook)
       end
 
       it 'removes King from its original position' do
-        test.castling(color, input)
+        test.castling(color, trg)
         original_pos = test.board[0][4]
         expect(original_pos).to eq(' ')
       end
 
       it 'removes Rook from its original position' do
-        test.castling(color, input)
+        test.castling(color, trg)
         original_pos = test.board[0][0]
         expect(original_pos).to eq(' ')
       end
@@ -1167,126 +1169,145 @@ describe Board do
     end
 
     context 'when King has not moved previously during the game' do
+      let(:trg) { King.new(6, 7, 'white') }
+
       it 'is permissible' do
-        input = '00'
+        # input = '00'
         color = 'white'
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
       end
     end
 
     context 'when King has moved previously during the game' do
+      let(:trg) { King.new(6, 7, 'white') }
       let(:new_king) { King.new(4, 7, 'white') }
 
       it 'is not permissible' do 
-        input = '00'
+        # input = '00'
         color = 'white'
         test.place(new_king)
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(false)
       end
     end
 
     context 'when Rook has not moved previously during the game' do
+      let(:trg) { King.new(6, 7, 'white') }
+
       it 'is permissible' do
-        input = '00'
+        # input = '00'
         color = 'white'
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
       end
     end
 
     context 'when Rook has moved previously during the game' do
+      let(:trg) { King.new(6, 7, 'white') }
+
       let(:new_rook) { Rook.new(7, 7, 'white') }
 
       it 'is not permissible' do
-        input = '00'
+        # input = '00'
         color = 'white'
         test.place(new_rook)
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(false)
       end
     end
 
     context 'when there are no pieces between King and Rook' do
+      let(:trg) { King.new(6, 7, 'white') }
+
       it 'is permissible' do 
-        input = '00'
+        # input = '00'
         color = 'white'
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
       end
     end
 
     context 'when there are pieces between King and Rook' do
+      let(:trg) { King.new(6, 7, 'white') }
       let(:pawn) { Pawn.new(6, 7, 'white') }
       it 'is not permissible' do 
-        input = '00'
+        # input = '00'
         color = 'white'
         test.place(pawn)
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(false)
       end
     end
 
     context 'when King is not in check' do
+      let(:trg) { King.new(6, 7, 'white') }
+
       it 'is permissible' do 
-        input = '00'
+        # input = '00'
         color = 'white'
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
       end
     end
 
     context 'when King is in check' do
       let(:queen) { Queen.new(4, 4, 'black') }
+      let(:trg) { King.new(6, 7, 'white') }
 
       it 'is not permissible' do
         test.place(queen)
-        input = '00'
+        # input = '00'
         color = 'white'
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(false)
       end
     end
 
     context 'when King does not pass through a square under attack' do
+      let(:trg) { King.new(6, 7, 'white') }
+
       it 'is permissible' do 
-        input = '00'
+        # input = '00'
         color = 'white'
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
       end
     end
 
     context 'when King passes through a square under attack' do
       let(:queen) { Queen.new(5, 4, 'black') }
+      let(:trg) { King.new(6, 7, 'white') }
 
       it 'is not permissible' do 
         test.place(queen)
-        input = '00'
+        # input = '00'
         color = 'white'
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(false)
       end
     end
 
     context 'when King does not end up in check' do
+      let(:trg) { King.new(6, 7, 'white') }
+
       it 'is permissible' do 
-        input = '00'
+        # input = '00'
         color = 'white'
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
       end
     end
 
     context 'when King ends up in check' do
       let(:queen) { Queen.new(6, 4, 'black') }
+      let(:trg) { King.new(6, 7, 'white') }
 
       it 'is not permissible' do
         test.place(queen)
-        input = '00'
+        # input = '00'
         color = 'white'
-        result = test.castling_permissible?(color, input)
+        result = test.castling_permissible?(color, trg)
         expect(result).to eq(false)
       end
     end
@@ -1478,7 +1499,5 @@ describe Board do
         expect(result).to eq(false)
       end
     end
-
-
   end
 end

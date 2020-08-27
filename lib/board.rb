@@ -1,6 +1,6 @@
 require 'pry'
 class Board
-  attr_reader :board, :history
+  attr_reader :board, :history, :positions, :originals, :halfmove_clock
   
   SIZE = 8
   EMPTY_SQUARE = ' '
@@ -8,17 +8,26 @@ class Board
   def initialize
     @board = Array.new(SIZE) { Array.new(SIZE, EMPTY_SQUARE) }
     @history = []
+    @positions = []
+    @originals = []
+    @halfmove_clock = 0
   end
 
   def populate_board
     place_rooks
+
+    save_rooks
+    
     place_knights
     place_bishops
     place_queens
     place_kings
+
+    save_kings
+
     place_white_pawns
     place_black_pawns
-    # originals = save_originals
+    # @originals = [board[7][4], board[0][4], board[7][7], board[7][0], board[0][7], board[0][0]]
   end
 
   def place_rooks
@@ -83,6 +92,26 @@ class Board
     # original_black_kingside_rook = board[0][7]
     # original_black_queenside_rook = board[0][0]
     @originals = [board[7][4], board[0][4], board[7][7], board[7][0], board[0][7], board[0][0]]
+    # @originals = []
+    # @originals << board[7][4]
+    # @originals << board[0][4]
+    # @originals << board[7][7]
+    # @originals << board[7][0]
+    # @originals << board[0][7]
+    # @originals << board[0][0]
+    # @originals = board
+  end
+
+  def save_kings
+    @originals << board[7][4]
+    @originals << board[0][4]
+  end
+
+  def save_rooks
+    @originals << board[7][7]
+    @originals << board[7][0]
+    @originals << board[0][7]
+    @originals << board[0][0]
   end
 
 
@@ -179,6 +208,15 @@ class Board
     elsif src.class == King
       if (src.rank - trg.rank).abs <= 1 && (src.file - trg.file).abs <= 1
         true
+      # elsif castling_permissible?(src.color, trg)
+      #   if (src.file - trg.file).abs == 2 && src.rank == trg.rank
+      #     true
+      #   else
+      #     false
+      #   end
+
+      # elsif (src.file - trg.file).abs == 2 && src.rank == trg.rank
+        # true if castling_permissible?(src.color, trg)
       else
         # puts 'Invalid move'
         false
@@ -263,13 +301,26 @@ class Board
     if valid_move?(src, trg)
       if path_free?(src, trg)
         if !in_check?(src.color) || getting_out_of_check?(src, trg)
-          place(trg)
-          clean(src)
-          clean_adjacent(src, trg) if en_passant?(src, trg)
-          promote(trg) if promotion?(trg)
-          history << [from, to]
-          # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
-          show
+          if threefold_repetition?(src, trg, src.color) || fifty_move?
+            puts "Claim draw?"
+          else
+            place(trg)
+            clean(src)
+            clean_adjacent(src, trg) if en_passant?(src, trg)
+            promote(trg) if promotion?(trg)
+            history << [from, to]
+            positions << [piece_placement, en_passant?(src, trg), castling_rights(src.color)]
+            # if pawn_move? || capture?
+            if src.is_a?(Pawn) || (board[to[1]][to[0]] != EMPTY_SQUARE && board[to[1]][to[0]].color != src.color)
+              halfmove_clock = 0
+            else
+              halfmove_clock += 1
+            end
+            # positions << [piece_placement, en_passant?(src, trg)]
+
+            # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
+            show
+          end
         else
           if checkmate?(src.color)
             puts "Checkmate"
@@ -516,18 +567,34 @@ class Board
   #   end
   # end
 
-  def castling(color, input)
+  def castling(color, trg)
     king = find_king(color)
-    rook = find_rook(color, input)
-    if input == '00'
+    rook = find_rook(color, trg)
+    # if input == '00'
+    if trg.is_a?(King) && trg.file == 6
       place(King.new(king.file + 2, king.rank, color))
       place(Rook.new(rook.file - 2, rook.rank, color))
-    else
+    elsif trg.is_a?(King) && trg.file == 2
       place(King.new(king.file - 2, king.rank, color))
       place(Rook.new(rook.file + 3, rook.rank, color))
     end
     clean(king)
     clean(rook)
+  end
+
+  def find_king(color)
+    board.flatten.find { |square| square.is_a?(King) && square.color == color }
+  end
+
+  #magic numbers 7 and 0
+  def find_rook(color, trg)
+    rooks = board.flatten.find_all { |square| square.is_a?(Rook) && square.color == color }
+    if trg.is_a?(King) && trg.file == 6
+    # if input == '00'
+      rooks.find { |rook| rook if rook.file == 7 }
+    elsif trg.is_a?(King) && trg.file == 2
+      rooks.find { |rook| rook if rook.file == 0 }
+    end
   end
 
   #IDEA FOR REFACTORING
@@ -555,9 +622,9 @@ class Board
 
   # end
 
-  def castling_permissible?(color, input)
+  def castling_permissible?(color, trg)
     king = find_king(color)
-    rook = find_rook(color, input)
+    rook = find_rook(color, trg)
     no_obstacles_between?(rook, king) &&
     path_safe?(rook, king) &&
     first_move?(king) &&
@@ -598,6 +665,13 @@ class Board
     original.eql?(piece)
   end
 
+  def castling_rights(color)
+    king = find_king(color)
+    kingside_rook = board.flatten.find { |square| square.is_a?(Rook) && square.color == color && square.file == 7 }
+    queenside_rook = board.flatten.find { |square| square.is_a?(Rook) && square.color == color && square.file == 0 }
+    [first_move?(king) && first_move?(kingside_rook), first_move?(king) && first_move?(queenside_rook)]
+  end
+
   #WAS AN IDEA! NOT very good but elegant
   #it adds an additional square to the path
   #adds a square from the piece has arrived previsouly
@@ -606,20 +680,6 @@ class Board
   # def first_move?(piece)
   #   piece.parent.nil?
   # end
-
-  def find_king(color)
-    board.flatten.find { |square| square.is_a?(King) && square.color == color }
-  end
-
-  #magic numbers 7 and 0
-  def find_rook(color, input)
-    rooks = board.flatten.find_all { |square| square.is_a?(Rook) && square.color == color }
-    if input == '00'
-      rooks.find { |rook| rook if rook.file == 7 }
-    else
-      rooks.find { |rook| rook if rook.file == 0 }
-    end
-  end
 
   def en_passant?(src, trg)
     correct_rank?(src) && 
@@ -637,8 +697,8 @@ class Board
     left_adjacent = board[src.rank][src.file - 1]
     right_adjacent = board[src.rank][src.file + 1]
     #left_adjacent.is_a?(Pawn)
-    (left_adjacent != EMPTY_SQUARE && left_adjacent.color == enemy_color) ||
-     (right_adjacent != EMPTY_SQUARE && right_adjacent.color == enemy_color)
+    (left_adjacent.is_a?(Pawn) && left_adjacent.color == enemy_color) ||
+     (right_adjacent.is_a?(Pawn) && right_adjacent.color == enemy_color)
   end
 
   def just_double_moved?(src)
@@ -719,6 +779,40 @@ class Board
 
   def stalemate?(color)
     !in_check?(color) && no_legal_move_to_escape?(color)
+  end
+
+  #need to add side_to_move support, so
+  #for each player threefold_repetition
+  #or try to sort positions by odd and even 
+  def threefold_repetition?(src, trg, color)
+    actual_position = [piece_placement, en_passant?(src, trg), castling_rights(src.color)]
+    positions.count { |position| position == actual_position } > 2
+  end
+
+  # def positions(src, trg, color)
+  #   # board - make simplified board
+  #   positions << [piece_placement, en_passant?(src, trg), castling_permissible?(color, trg)]
+  # end
+
+  def piece_placement
+    # copy.map { |row| row.map { |sq| sq.class if !sq.is_a?(String) } }
+    board.map { |row| row.map { |sq| sq.symbol if !sq.is_a?(String) } }
+  end
+
+  # def side_to_move #instead of "color"
+
+  # end
+
+  def fifty_move?
+    halfmove_clock >= 100
+  end
+
+  def dead_position?
+    only_kings? || 
+  end
+  
+  def only_kings?
+    board.flatten.all? { |square| square.is_a?(King) || square.is_a?(String) }
   end
 
 end
