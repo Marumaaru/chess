@@ -301,7 +301,7 @@ class Board
     if valid_move?(src, trg)
       if path_free?(src, trg)
         if !in_check?(src.color) || getting_out_of_check?(src, trg)
-          if threefold_repetition?(src, trg, src.color) || fifty_move?
+          if threefold_repetition?(src, trg, src.color) || fifty_move? || dead_position?
             puts "Claim draw?"
           else
             place(trg)
@@ -312,9 +312,9 @@ class Board
             positions << [piece_placement, en_passant?(src, trg), castling_rights(src.color)]
             # if pawn_move? || capture?
             if src.is_a?(Pawn) || (board[to[1]][to[0]] != EMPTY_SQUARE && board[to[1]][to[0]].color != src.color)
-              halfmove_clock = 0
+              @halfmove_clock = 0
             else
-              halfmove_clock += 1
+              @halfmove_clock += 1
             end
             # positions << [piece_placement, en_passant?(src, trg)]
 
@@ -789,11 +789,6 @@ class Board
     positions.count { |position| position == actual_position } > 2
   end
 
-  # def positions(src, trg, color)
-  #   # board - make simplified board
-  #   positions << [piece_placement, en_passant?(src, trg), castling_permissible?(color, trg)]
-  # end
-
   def piece_placement
     # copy.map { |row| row.map { |sq| sq.class if !sq.is_a?(String) } }
     board.map { |row| row.map { |sq| sq.symbol if !sq.is_a?(String) } }
@@ -808,11 +803,23 @@ class Board
   end
 
   def dead_position?
-    only_kings? || 
+    bare_kings? || king_and_minor_vs_bare_king? || king_and_bishop_same_color?
   end
   
-  def only_kings?
+  def bare_kings?
     board.flatten.all? { |square| square.is_a?(King) || square.is_a?(String) }
+  end
+
+  def king_and_minor_vs_bare_king?
+    minor_list = board.flatten.select { |square| square != EMPTY_SQUARE && square.class != King }
+    minor_list.size == 1 && (minor_list.first.is_a?(Bishop) || minor_list.first.is_a?(Knight))
+  end
+
+  def king_and_bishop_same_color?
+    bishops = board.flatten.select { |square| square != EMPTY_SQUARE && square.class != King }
+    (bishops.size == 2 && bishops.first.is_a?(Bishop) && bishops.last.is_a?(Bishop)) &&
+    (((bishops.first.rank - bishops.first.file).abs.even? && (bishops.last.rank - bishops.last.file).abs.even?) ||
+    ((bishops.first.rank - bishops.first.file).abs.odd? && (bishops.last.rank - bishops.last.file).abs.odd?))
   end
 
 end

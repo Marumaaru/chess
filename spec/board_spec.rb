@@ -196,6 +196,7 @@ describe Board do
 
   describe "#piece_moves(from, to)" do
     let(:queen) { Queen.new(4, 4, 'white') }
+    let(:halfmove_clock) { 0 }
 
     before do
       test.place(queen)
@@ -1496,6 +1497,96 @@ describe Board do
         test.clean(queen)
         color = 'black'
         result = test.stalemate?(color)
+        expect(result).to eq(false)
+      end
+    end
+  end
+
+  describe "#dead_position?" do
+    context 'when both sides have a bare king' do
+      let(:white_king) { King.new(2, 2, 'black') }
+      let(:black_king) { King.new(6, 6, 'white') }
+
+      it 'is a dead position' do
+        test.place(white_king)
+        test.place(black_king)
+        result = test.dead_position?
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when one player has not only the king' do
+      let(:white_king) { King.new(2, 2, 'black') }
+      let(:black_king) { King.new(6, 6, 'white') }
+      let(:pawn) { Pawn.new(4, 4, 'white') }
+
+      it 'is not a dead position' do
+        test.place(white_king)
+        test.place(black_king)
+        test.place(pawn)
+        result = test.dead_position?
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when one side has a king and a minor (bishop or knight) piece against a bare king' do
+      let(:white_king) { King.new(2, 2, 'black') }
+      let(:black_king) { King.new(6, 6, 'white') }
+      let(:bishop) { Bishop.new(4, 4, 'white') }
+
+      it 'is a dead position' do
+        test.place(white_king)
+        test.place(black_king)
+        test.place(bishop)
+        result = test.dead_position?
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when both sides have a king and a minor (bishop or knight) piece' do
+      let(:white_king) { King.new(2, 2, 'black') }
+      let(:black_king) { King.new(6, 6, 'white') }
+      let(:bishop) { Bishop.new(7, 7, 'white') }
+      let(:knight) { Knight.new(2, 4, 'black') }
+
+      it 'is not a dead position' do
+        test.place(white_king)
+        test.place(black_king)
+        test.place(bishop)
+        test.place(knight)
+        result = test.dead_position?
+        expect(result).to eq(false)
+      end
+    end
+
+    context 'when both sides have a king and a bishop, the bishops being the same color' do
+      let(:white_king) { King.new(4, 0, 'black') }
+      let(:black_king) { King.new(4, 7, 'white') }
+      let(:white_bishop) { Bishop.new(2, 7, 'white') }
+      let(:black_bishop) { Bishop.new(5, 0, 'black') }
+
+      it 'is a dead position' do
+        test.place(white_king)
+        test.place(black_king)
+        test.place(white_bishop)
+        test.place(black_bishop)
+        result = test.dead_position?
+        expect(result).to eq(true)
+      end
+    end
+
+    context 'when both sides have a king and a bishop, the bishops being different color' do
+      let(:white_king) { King.new(4, 0, 'black') }
+      let(:black_king) { King.new(4, 7, 'white') }
+      let(:white_bishop) { Bishop.new(2, 7, 'white') }
+      let(:black_bishop) { Bishop.new(2, 0, 'black') }
+
+      it 'is not a dead position' do
+        test.place(white_king)
+        test.place(black_king)
+        test.place(white_bishop)
+        test.place(black_bishop)
+        result = test.dead_position?
         expect(result).to eq(false)
       end
     end
