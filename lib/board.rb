@@ -7,6 +7,7 @@ class Board
 
   def initialize
     @board = Array.new(SIZE) { Array.new(SIZE, EMPTY_SQUARE) }
+    # @board = Array.new(SIZE) { Array.new(SIZE) }
     @history = []
     @positions = []
     @originals = []
@@ -348,23 +349,54 @@ class Board
   def show
     puts "\n    a   b   c   d   e   f   g   h  "
     puts '  +---+---+---+---+---+---+---+---+'
-    mapped_board.each_with_index do |row, idx|
-      puts "#{board.size - idx} | " + row.join(' | ') + " | #{board.size - idx}"
+    checkered_board.each_with_index do |row, idx|
+      # puts "#{board.size - idx} | " + row.join(' | ') + " | #{board.size - idx}"
+      puts "#{board.size - idx} |" + row.join('|') + "| #{board.size - idx}"
       puts '  +---+---+---+---+---+---+---+---+'
     end
     puts '    a   b   c   d   e   f   g   h  '
   end
 
-  def mapped_board
-    board.map do |row|
-      row.map do |square| 
+  # def mapped_board
+  #   board.map do |row|
+  #     row.map do |square| 
+  #       if square == EMPTY_SQUARE
+  #         EMPTY_SQUARE
+  #       elsif square == '*'
+  #         '*'
+  #       else
+  #         square.symbol
+  #         # square.name
+  #       end
+  #     end
+  #   end
+  # end
+
+  def checkered_board
+    board.map.with_index do |row, row_idx|
+      row.map.with_index do |square, square_idx| 
         if square == EMPTY_SQUARE
-          EMPTY_SQUARE
-        elsif square == '*'
-          '*'
+          if  (row_idx - square_idx).abs.odd?
+            # square = "\e[47m #{EMPTY_SQUARE} \e[0m" #bg_gray
+            # square = "\e[7m #{EMPTY_SQUARE} \e[27m" #reverse_color
+            # square = "\e[46m #{EMPTY_SQUARE} \e[0m" #bg_cyan
+            # "\e[36;47m #{EMPTY_SQUARE} \e[0m" #cyan_on_light_gray
+            "\e[93;104m #{EMPTY_SQUARE} \e[0m" #lt_yellow_on_lt_blue
+          else
+            " #{EMPTY_SQUARE} "
+          end
         else
-          square.symbol
-          # square.name
+          if  (row_idx - square_idx).abs.odd?
+            # square = "\e[47m #{square.symbol} \e[0m" #bg_gray
+            # square = "\e[7m #{square.symbol} \e[27m" #reverse_color
+            # square = "\e[46m #{square.symbol} \e[0m" #bg_cyan
+            # "\e[36;47m #{square.symbol} \e[0m" #cyan_on_light_gray
+            "\e[93;104m #{square.symbol} \e[0m" #lt_yellow_on_lt_blue
+          else
+            # " #{square.symbol} "
+            # "\e[36m #{square.symbol} \e[0m" #cyan
+            "\e[93m #{square.symbol} \e[0m" #cyan
+          end
         end
       end
     end
