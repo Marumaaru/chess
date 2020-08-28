@@ -3,11 +3,11 @@ class Board
   attr_reader :board, :history, :positions, :originals, :halfmove_clock
   
   SIZE = 8
-  EMPTY_SQUARE = ' '
+  # EMPTY_SQUARE = ' '
 
   def initialize
-    @board = Array.new(SIZE) { Array.new(SIZE, EMPTY_SQUARE) }
-    # @board = Array.new(SIZE) { Array.new(SIZE) }
+    # @board = Array.new(SIZE) { Array.new(SIZE, EMPTY_SQUARE) }
+    @board = Array.new(SIZE) { Array.new(SIZE) }
     @history = []
     @positions = []
     @originals = []
@@ -115,11 +115,6 @@ class Board
     @originals << board[0][0]
   end
 
-
-  #define special moves: postponed
-  #King: castling
-  #Pawn: en passant and promotion
-
   #create a Module 'Move_Validator'
   #put there valid_move?(src, trg)
   #create a separate test file & copy-paste
@@ -128,7 +123,8 @@ class Board
   def valid_move?(src, trg)
     if src.class == Pawn
       if (src.rank - trg.rank).abs == 1 && src.file == trg.file &&
-        board[trg.rank][trg.file] == EMPTY_SQUARE
+        # board[trg.rank][trg.file] == EMPTY_SQUARE
+        board[trg.rank][trg.file].nil?
         if src.color == 'white'
           if (src.rank - trg.rank) > 0
             true
@@ -145,7 +141,8 @@ class Board
           end
         end
       elsif (src.rank - trg.rank).abs == 2 &&
-        board[trg.rank][trg.file] == EMPTY_SQUARE
+        # board[trg.rank][trg.file] == EMPTY_SQUARE
+        board[trg.rank][trg.file].nil?
         if src.rank == 6 || src.rank == 1
           true
         else
@@ -156,7 +153,8 @@ class Board
             (src.rank - trg.rank).abs == 1 #&& otherwise can slide diagonally
             # board[trg.rank][trg.file] != EMPTY_SQUARE
         # unless board[trg.rank][trg.file].color == src.color
-        if board[trg.rank][trg.file] != EMPTY_SQUARE && 
+        # if board[trg.rank][trg.file] != EMPTY_SQUARE && 
+        if !board[trg.rank][trg.file].nil? && 
           board[trg.rank][trg.file].color != src.color
           if src.color == 'white'
             if (src.rank - trg.rank) > 0
@@ -173,7 +171,8 @@ class Board
               false
             end
           end
-        elsif board[trg.rank][trg.file] == EMPTY_SQUARE && 
+        # elsif board[trg.rank][trg.file] == EMPTY_SQUARE && 
+        elsif board[trg.rank][trg.file].nil? && 
               en_passant?(src, trg)
           true
         else
@@ -265,7 +264,8 @@ class Board
     if route.size <= 2
       true
     else
-      route[1..route.size - 2].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE }
+      # route[1..route.size - 2].all? { |coords| board[coords[1]][coords[0]] == EMPTY_SQUARE }
+      route[1..route.size - 2].all? { |coords| board[coords[1]][coords[0]].nil? }
     end
   end
 
@@ -274,7 +274,8 @@ class Board
   end
 
   def target_is_empty?(trg)
-    board[trg.rank][trg.file] == EMPTY_SQUARE
+    # board[trg.rank][trg.file] == EMPTY_SQUARE
+    board[trg.rank][trg.file].nil?
   end
 
   def enemy?(from, to) #trg_square_enemy?
@@ -282,7 +283,8 @@ class Board
   end
 
   def empty?(coords)
-    board[coords[1]][coords[0]] == EMPTY_SQUARE
+    # board[coords[1]][coords[0]] == EMPTY_SQUARE
+    board[coords[1]][coords[0]].nil?
   end
 
   def bfs_traversal(src, trg, queue = [])
@@ -312,7 +314,8 @@ class Board
             history << [from, to]
             positions << [piece_placement, en_passant?(src, trg), castling_rights(src.color)]
             # if pawn_move? || capture?
-            if src.is_a?(Pawn) || (board[to[1]][to[0]] != EMPTY_SQUARE && board[to[1]][to[0]].color != src.color)
+            # if src.is_a?(Pawn) || (board[to[1]][to[0]] != EMPTY_SQUARE && board[to[1]][to[0]].color != src.color)
+            if src.is_a?(Pawn) || (!board[to[1]][to[0]].nil? && board[to[1]][to[0]].color != src.color)
               @halfmove_clock = 0
             else
               @halfmove_clock += 1
@@ -375,15 +378,17 @@ class Board
   def checkered_board
     board.map.with_index do |row, row_idx|
       row.map.with_index do |square, square_idx| 
-        if square == EMPTY_SQUARE
+        # if square == EMPTY_SQUARE
+        if square.nil?
           if  (row_idx - square_idx).abs.odd?
             # square = "\e[47m #{EMPTY_SQUARE} \e[0m" #bg_gray
             # square = "\e[7m #{EMPTY_SQUARE} \e[27m" #reverse_color
             # square = "\e[46m #{EMPTY_SQUARE} \e[0m" #bg_cyan
             # "\e[36;47m #{EMPTY_SQUARE} \e[0m" #cyan_on_light_gray
-            "\e[93;104m #{EMPTY_SQUARE} \e[0m" #lt_yellow_on_lt_blue
+            # "\e[93;104m #{EMPTY_SQUARE} \e[0m" #lt_yellow_on_lt_blue
+            "\e[93;104m   \e[0m" #lt_yellow_on_lt_blue
           else
-            " #{EMPTY_SQUARE} "
+            "   "
           end
         else
           if  (row_idx - square_idx).abs.odd?
@@ -407,7 +412,8 @@ class Board
   end
 
   def clean(piece)
-    board[piece.rank][piece.file] = EMPTY_SQUARE
+    # board[piece.rank][piece.file] = EMPTY_SQUARE
+    board[piece.rank][piece.file] = nil
   end
 
   # def find_pieces_by(input)
@@ -425,7 +431,8 @@ class Board
     list_of_pieces = []
     board.each do |row|
       row.each do |square|
-        list_of_pieces << square if square.color == color unless square == EMPTY_SQUARE
+        # list_of_pieces << square if square.color == color unless square == EMPTY_SQUARE
+        list_of_pieces << square if square.color == color unless square.nil?
       end
     end
     list_of_pieces
@@ -435,7 +442,8 @@ class Board
     list_of_pieces = []
     board.each do |row|
       row.each do |square|
-        list_of_pieces << square if square.name == 'K' unless square == EMPTY_SQUARE
+        # list_of_pieces << square if square.name == 'K' unless square == EMPTY_SQUARE
+        list_of_pieces << square if square.name == 'K' unless square.nil?
       end
     end
     list_of_pieces
@@ -495,7 +503,7 @@ class Board
     current_player_king = find_kings.select { |king| king if king.color == color }.first
     current_player_king.class::MOVES.map { |row, col| [row + current_player_king.file, col + current_player_king.rank] }
                                     .select { |row, col| row.between?(0,7) && col.between?(0,7) }
-                                    .select { |row, col| board[col][row] == EMPTY_SQUARE || board[col][row].color != current_player_king.color }
+                                    .select { |row, col| board[col][row].nil? || board[col][row].color != current_player_king.color }
                                     .map { |coords| King.new(*coords, current_player_king.color) }
                                     .none? { |move| getting_out_of_check?(current_player_king, move) }
   end
@@ -505,7 +513,7 @@ class Board
     current_player_king = find_kings.select { |king| king if king.color == color }.first
     current_player_king.class::MOVES.map { |row, col| [row + current_player_king.file, col + current_player_king.rank] }
                                     .select { |row, col| row.between?(0,7) && col.between?(0,7) }
-                                    .select { |row, col| board[col][row].color != current_player_king.color unless board[col][row] == EMPTY_SQUARE }
+                                    .select { |row, col| board[col][row].color != current_player_king.color unless board[col][row].nil? }
                                     .map { |coords| King.new(*coords, current_player_king.color) }
                                     .none? { |move| getting_out_of_check?(current_player_king, move) }
   end
@@ -515,7 +523,7 @@ class Board
     current_player_king = find_kings.select { |king| king if king.color == color }.first
     current_player_king.class::MOVES.map { |row, col| [row + current_player_king.file, col + current_player_king.rank] }
                                     .select { |row, col| row.between?(0,7) && col.between?(0,7) }
-                                    .select { |row, col| board[col][row] == EMPTY_SQUARE }
+                                    .select { |row, col| board[col][row].nil? }
                                     .map { |coords| King.new(*coords, current_player_king.color) }
                                     .none? { |move| getting_out_of_check?(current_player_king, move) }
   end
@@ -765,10 +773,12 @@ class Board
   def capture?(src, trg)
     left_adjacent = board[src.rank][src.file - 1]
     right_adjacent = board[src.rank][src.file + 1]
-    if left_adjacent != EMPTY_SQUARE
+    # if left_adjacent != EMPTY_SQUARE
+    if !left_adjacent.nil?
       (trg.rank == left_adjacent.rank - 1 && trg.file == left_adjacent.file) ||
       (trg.rank == left_adjacent.rank + 1 && trg.file == left_adjacent.file)
-    elsif right_adjacent != EMPTY_SQUARE
+    # elsif right_adjacent != EMPTY_SQUARE
+    elsif !right_adjacent.nil?
       (trg.rank == right_adjacent.rank - 1 && trg.file == right_adjacent.file) ||
       (trg.rank == right_adjacent.rank + 1 && trg.file == right_adjacent.file)
     end
@@ -778,9 +788,11 @@ class Board
     left_adjacent = board[src.rank][src.file - 1]
     right_adjacent = board[src.rank][src.file + 1]
 
-    if left_adjacent != EMPTY_SQUARE && trg.file == left_adjacent.file
+    # if left_adjacent != EMPTY_SQUARE && trg.file == left_adjacent.file
+    if !left_adjacent.nil? && trg.file == left_adjacent.file
       clean(left_adjacent)
-    elsif right_adjacent != EMPTY_SQUARE && trg.file == right_adjacent.file
+    # elsif right_adjacent != EMPTY_SQUARE && trg.file == right_adjacent.file
+    elsif !right_adjacent.nil? && trg.file == right_adjacent.file
       clean(right_adjacent)
     end
   end
@@ -823,7 +835,7 @@ class Board
 
   def piece_placement
     # copy.map { |row| row.map { |sq| sq.class if !sq.is_a?(String) } }
-    board.map { |row| row.map { |sq| sq.symbol if !sq.is_a?(String) } }
+    board.map { |row| row.map { |sq| sq.symbol if !sq.nil? } }
   end
 
   # def side_to_move #instead of "color"
@@ -839,16 +851,18 @@ class Board
   end
   
   def bare_kings?
-    board.flatten.all? { |square| square.is_a?(King) || square.is_a?(String) }
+    board.flatten.all? { |square| square.is_a?(King) || square.nil? }
   end
 
   def king_and_minor_vs_bare_king?
-    minor_list = board.flatten.select { |square| square != EMPTY_SQUARE && square.class != King }
+    # minor_list = board.flatten.select { |square| square != EMPTY_SQUARE && square.class != King }
+    minor_list = board.flatten.select { |square| !square.nil? && square.class != King }
     minor_list.size == 1 && (minor_list.first.is_a?(Bishop) || minor_list.first.is_a?(Knight))
   end
 
   def king_and_bishop_same_color?
-    bishops = board.flatten.select { |square| square != EMPTY_SQUARE && square.class != King }
+    # bishops = board.flatten.select { |square| square != EMPTY_SQUARE && square.class != King }
+    bishops = board.flatten.select { |square| !square.nil? && square.class != King }
     (bishops.size == 2 && bishops.first.is_a?(Bishop) && bishops.last.is_a?(Bishop)) &&
     (((bishops.first.rank - bishops.first.file).abs.even? && (bishops.last.rank - bishops.last.file).abs.even?) ||
     ((bishops.first.rank - bishops.first.file).abs.odd? && (bishops.last.rank - bishops.last.file).abs.odd?))
