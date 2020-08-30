@@ -1171,7 +1171,6 @@ describe Board do
       let(:trg) { King.new(6, 7, 'white') }
 
       it 'is permissible' do
-        # input = '00'
         color = 'white'
         result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
@@ -1183,7 +1182,6 @@ describe Board do
       let(:new_king) { King.new(4, 7, 'white') }
 
       it 'is not permissible' do 
-        # input = '00'
         color = 'white'
         test.place(new_king)
         result = test.castling_permissible?(color, trg)
@@ -1195,7 +1193,6 @@ describe Board do
       let(:trg) { King.new(6, 7, 'white') }
 
       it 'is permissible' do
-        # input = '00'
         color = 'white'
         result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
@@ -1204,11 +1201,9 @@ describe Board do
 
     context 'when Rook has moved previously during the game' do
       let(:trg) { King.new(6, 7, 'white') }
-
       let(:new_rook) { Rook.new(7, 7, 'white') }
 
       it 'is not permissible' do
-        # input = '00'
         color = 'white'
         test.place(new_rook)
         result = test.castling_permissible?(color, trg)
@@ -1220,7 +1215,6 @@ describe Board do
       let(:trg) { King.new(6, 7, 'white') }
 
       it 'is permissible' do 
-        # input = '00'
         color = 'white'
         result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
@@ -1231,7 +1225,6 @@ describe Board do
       let(:trg) { King.new(6, 7, 'white') }
       let(:pawn) { Pawn.new(6, 7, 'white') }
       it 'is not permissible' do 
-        # input = '00'
         color = 'white'
         test.place(pawn)
         result = test.castling_permissible?(color, trg)
@@ -1243,7 +1236,6 @@ describe Board do
       let(:trg) { King.new(6, 7, 'white') }
 
       it 'is permissible' do 
-        # input = '00'
         color = 'white'
         result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
@@ -1256,7 +1248,6 @@ describe Board do
 
       it 'is not permissible' do
         test.place(queen)
-        # input = '00'
         color = 'white'
         result = test.castling_permissible?(color, trg)
         expect(result).to eq(false)
@@ -1267,7 +1258,6 @@ describe Board do
       let(:trg) { King.new(6, 7, 'white') }
 
       it 'is permissible' do 
-        # input = '00'
         color = 'white'
         result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
@@ -1280,7 +1270,6 @@ describe Board do
 
       it 'is not permissible' do 
         test.place(queen)
-        # input = '00'
         color = 'white'
         result = test.castling_permissible?(color, trg)
         expect(result).to eq(false)
@@ -1291,7 +1280,6 @@ describe Board do
       let(:trg) { King.new(6, 7, 'white') }
 
       it 'is permissible' do 
-        # input = '00'
         color = 'white'
         result = test.castling_permissible?(color, trg)
         expect(result).to eq(true)
@@ -1304,7 +1292,6 @@ describe Board do
 
       it 'is not permissible' do
         test.place(queen)
-        # input = '00'
         color = 'white'
         result = test.castling_permissible?(color, trg)
         expect(result).to eq(false)
@@ -1326,7 +1313,7 @@ describe Board do
         src = attacking_white_pawn
         allow(test).to receive(:adjacent?).and_return(true)
         allow(test).to receive(:just_double_moved?).and_return(true)
-        allow(test).to receive(:capture?).and_return(true)
+        allow(test).to receive(:immediate_capture?).and_return(true)
         result = test.en_passant?(src, trg)
         expect(result).to eq(true)
       end
@@ -1340,7 +1327,7 @@ describe Board do
         src = attacking_black_pawn
         allow(test).to receive(:adjacent?).and_return(true)
         allow(test).to receive(:just_double_moved?).and_return(true)
-        allow(test).to receive(:capture?).and_return(true)
+        allow(test).to receive(:immediate_capture?).and_return(true)
         result = test.en_passant?(src, trg)
         expect(result).to eq(true)
       end
@@ -1586,6 +1573,201 @@ describe Board do
         test.place(black_bishop)
         result = test.dead_position?
         expect(result).to eq(false)
+      end
+    end
+  end
+
+  describe "#fan" do
+    let(:white_king) { King.new(4, 7, 'white') }
+    let(:black_king) { King.new(4, 0, 'black') }
+
+    before do
+      test.place(white_king)
+      test.place(black_king)
+    end
+
+    context 'when recording and describing the moves in a game' do
+      let(:knight) { Knight.new(4, 4, 'white') }
+      let(:pawn) { Pawn.new(2, 6, 'white') }
+
+      it 'uses miniature piece icons to represent the origin square of the move' do
+        src = knight
+        trg = Knight.new(3, 2, 'white')
+        result = test.fan(src, trg).split('').first
+        # result = test.fan(src, trg)
+        example = "\u2658"
+        expect(result).to eq(example)
+      end
+
+      it 'omits pawns figurines' do
+        src = pawn
+        trg = Pawn.new(2, 5, 'white')
+        result = test.fan(src, trg)
+        example = "c3"
+        expect(result).to eq(example)
+      end
+
+      it 'notates the target square by algebraic coordinates' do
+        src = knight
+        trg = Knight.new(6, 5, 'white')
+        result = test.fan(src, trg)
+        example = "\u2658g3"
+        expect(result).to eq(example)
+      end
+    end
+
+    context 'when a piece makes a capture' do
+      let(:rook) { Rook.new(0, 7, 'white') }
+      let(:pawn) { Pawn.new(0, 3, 'black') }
+
+      it 'inserts the lower case letter "x" immediately prior to the destination square' do
+        src = rook
+        trg = Rook.new(0, 3, 'white')
+        test.place(rook)
+        test.place(pawn)
+        result = test.fan(src, trg)
+        example = "\u2656xa5"
+        expect(result).to eq(example)
+      end
+    end
+
+    context 'when a pawn makes a capture' do
+      let(:capturing_pawn) { Pawn.new(0, 3, 'black') }
+      let(:captured_pawn) { Pawn.new(1, 4, 'white') }
+
+      it 'uses the file from which the pawn departed to identify the pawn' do
+        src = capturing_pawn
+        trg = Pawn.new(1, 4, 'black')
+        test.place(capturing_pawn)
+        test.place(captured_pawn)
+        result = test.fan(src, trg)
+        example = "axb4"
+        expect(result).to eq(example)
+      end
+    end
+
+    context 'when a pawn makes an en passant capture' do
+      let(:capturing_pawn) { Pawn.new(4, 3, 'white') }
+      let(:captured_pawn) { Pawn.new(5, 3, 'black') }
+
+      it 'specifies the capturing pawn\'s file of departure' do
+        src = capturing_pawn
+        trg = Pawn.new(5, 2, 'white')
+        test.place(capturing_pawn)
+        test.place(captured_pawn)
+        allow(test).to receive(:en_passant?).and_return(true)
+        result = test.fan(src, trg)
+        example = "exf6e.p."
+        expect(result).to eq(example)
+      end
+
+      it 'inserts the lower case letter "x" immediately prior to the destination square' do
+      end
+
+      it 'notates the target square (not the square of the captured pawn) by algebraic coordinates' do
+      end
+
+      it 'adds the suffix "e.p."' do
+      end
+    end
+
+    context 'when a pawn moves to the last rank and promotes' do
+      let(:pawn) { Pawn.new(7, 1, 'white') }
+
+      it 'indicates the piece promoted at the end of the move notation' do
+        src = pawn
+        trg = Pawn.new(7, 0, 'white')
+        allow(test).to receive(:promote).and_return(Queen.new(7, 0, 'white'))
+        result = test.fan(src, trg)
+        example = "h8=\u2655" #promoting to queen
+        expect(result).to eq(example)
+      end
+    end
+
+    context 'when kingside castling' do
+      let(:king) { King.new(4, 7, 'white') }
+      let(:kingside_rook) { Rook.new(7, 7, 'white') }
+
+      it 'uses the uppercase letter O for special notation O-O' do 
+        src = king
+        trg = King.new(6, 7, 'white')
+        result = test.fan(src, trg)
+        example = "O-O"
+        expect(result).to eq(example)
+      end
+    end
+
+    context 'when queenside castling' do
+      let(:king) { King.new(4, 7, 'white') }
+      let(:queenside_rook) { Rook.new(0, 7, 'white') }
+
+      it 'uses the uppercase letter O for special notation O-O-O' do 
+        src = king
+        trg = King.new(2, 7, 'white')
+        result = test.fan(src, trg)
+        example = "O-O-O"
+        expect(result).to eq(example)
+      end
+    end
+
+    context 'when placing the opponent\'s king in check' do
+      let(:king) { King.new(4, 7, 'white') }
+      let(:queen) { Queen.new(3, 2, 'black') }
+
+      it 'appends the symbol "+"' do
+        test.place(king)
+        test.place(queen)
+        src = queen
+        trg = Queen.new(4, 2, 'black')
+        result = test.fan(src, trg)
+        example = "\u265Be6+"
+        expect(result).to eq(example)
+      end
+    end
+
+    context 'when a pawn captures and promotes' do
+      let(:pawn) { Pawn.new(7, 1, 'white') }
+      let(:knight) { Knight.new(6, 0, 'black') }
+
+      it 'inserts the lower case letter "x" and indicates the piece promoted at the end of the move notation' do
+        test.place(pawn)
+        test.place(knight)
+        src = pawn
+        trg = Pawn.new(6, 0, 'white')
+        allow(test).to receive(:promote).and_return(Queen.new(7, 0, 'white'))
+        result = test.fan(src, trg)
+        example = "hxg8=\u2655" #promoting to queen
+        expect(result).to eq(example)
+      end
+    end
+
+    context 'when a pawn captures and places the opponent\'s kingin check' do
+      let(:pawn) { Pawn.new(4, 2, 'white') }
+      let(:knight) { Knight.new(3, 1, 'black') }
+
+      it 'inserts the lower case letter "x" and appends the symbol "+"' do
+        test.place(pawn)
+        test.place(knight)
+        src = pawn
+        trg = Pawn.new(3, 1, 'white')
+        result = test.fan(src, trg)
+        example = "exd7+"
+        expect(result).to eq(example)
+      end
+    end
+
+    context 'when a piece captures and places the opponent\'s king in check' do
+      let(:pawn) { Pawn.new(4, 6, 'white') }
+      let(:queen) { Queen.new(4, 2, 'black') }
+      
+      it 'inserts the lower case letter "x" and appends the symbol "+"' do
+        test.place(pawn)
+        test.place(queen)
+        src = queen
+        trg = Queen.new(4, 6, 'black')
+        result = test.fan(src, trg)
+        example = "\u265Bxe2+"
+        expect(result).to eq(example)
       end
     end
   end

@@ -1,6 +1,6 @@
 require 'pry'
 class Board
-  attr_reader :board, :history, :positions, :originals, :halfmove_clock
+  attr_reader :board, :history, :positions, :originals, :halfmove_clock, :move_sequence
   
   SIZE = 8
   # EMPTY_SQUARE = ' '
@@ -12,6 +12,7 @@ class Board
     @positions = []
     @originals = []
     @halfmove_clock = 0
+    @move_sequence = []
   end
 
   def populate_board
@@ -215,8 +216,8 @@ class Board
       #     false
       #   end
 
-      # elsif (src.file - trg.file).abs == 2 && src.rank == trg.rank
-        # true if castling_permissible?(src.color, trg)
+      # elsif (src.file - trg.file).abs == 2 && src.rank == trg.rank && castling_permissible?(src.color, trg)
+      #   true
       else
         # puts 'Invalid move'
         false
@@ -307,8 +308,10 @@ class Board
           if threefold_repetition?(src, trg, src.color) || fifty_move? || dead_position?
             puts "Claim draw?"
           else
+            move_sequence << fan(src, trg)
             place(trg)
             clean(src)
+            # castling(src.color, trg) if request_for_castling?(src, trg)
             clean_adjacent(src, trg) if en_passant?(src, trg)
             promote(trg) if promotion?(trg)
             history << [from, to]
@@ -323,8 +326,10 @@ class Board
             # positions << [piece_placement, en_passant?(src, trg)]
 
             # route[1..route.size-1].each { |move| board[move[1]][move[0]] = '*' }
-            show
           end
+          show
+          report
+          # move_sequence.each_slice(2).with_index { |(a, b), idx| puts "#{idx + 1}. #{a} #{b}" }
         else
           if checkmate?(src.color)
             puts "Checkmate"
@@ -335,6 +340,8 @@ class Board
       else
         puts "Invalid move: the path is not free"
       end
+    elsif request_for_castling?(src, trg)
+      castling(src.color, trg) if castling_permissible?(src.color, trg)
     else
       puts "Invalid move"
     end
@@ -349,7 +356,26 @@ class Board
     route << [node.file, node.rank]
   end
 
+
+  # [Event "19th Chess Olympiad"]
+  # [Site "Siegen, Germany"]
+  # [Date "1970.??.??"]
+  # [Round "3"]
+  # [Result "1-0"]
+  # [White "Robert James Fischer"]
+  # [Black "Miguel Najdorf"]
+
+  def report
+    move_sequence.each_slice(2).with_index { |(a, b), idx| puts "#{idx + 1}. #{a} #{b}" }
+  end
+
   def show
+    # puts "Current turn: WHITE"
+    # puts "Black's Turn: "
+    # puts "Rook from A3 to D3"
+    # puts "White player taken: figurine"
+    # puts "Black player taken: figurine"
+
     puts "\n    a   b   c   d   e   f   g   h  "
     puts '  +---+---+---+---+---+---+---+---+'
     checkered_board.each_with_index do |row, idx|
@@ -358,7 +384,31 @@ class Board
       puts '  +---+---+---+---+---+---+---+---+'
     end
     puts '    a   b   c   d   e   f   g   h  '
+    puts "\nCommands: (N)ew Game (S)ave (L)oad (Q)uit"
   end
+
+  # def try
+
+  #   <<~HEREDOC
+  #       a   b   c   d   e   f   g   h  
+  #     +---+---+---+---+---+---+---+---+
+  #      #{checkered_board[0][0]}|#{checkered_board[0][1]}|#{checkered_board[0][2]}|#{checkered_board[0][3]}|#{checkered_board[0][4]}|#{checkered_board[0][5]}|#{checkered_board[0][6]}|#{checkered_board[0][7]}|    Another info
+  #     +---+---+---+---+---+---+---+---+
+  #      #{checkered_board[1][0]}|#{checkered_board[1][1]}|#{checkered_board[1][2]}|#{checkered_board[1][3]}|#{checkered_board[1][4]}|#{checkered_board[1][5]}|#{checkered_board[1][6]}|#{checkered_board[1][7]}|    Another info
+  #     +---+---+---+---+---+---+---+---+
+
+  #   HEREDOC
+    
+    # puts "\n    a   b   c   d   e   f   g   h  "
+
+    # checkered_board.each_with_index do |row, idx|
+    # a=<<~HEREDOC
+    #   #{board.size - idx} |#{row.join('|')} | #{board.size - idx}
+    #     +---+---+---+---+---+---+---+---+
+    # HEREDOC
+    #   puts a
+    # end
+  # end
 
   # def mapped_board
   #   board.map do |row|
@@ -478,7 +528,7 @@ class Board
 
   def getting_out_of_check?(src, trg)
     original_trg = board[trg.rank][trg.file]
-    trg = src.class.new(trg.file, trg.rank, src.color)
+    # trg = src.class.new(trg.file, trg.rank, src.color)
     place(trg)
     clean(src)
     if !in_check?(src.color)
@@ -622,6 +672,10 @@ class Board
     clean(rook)
   end
 
+  def request_for_castling?(src, trg)
+    src.is_a?(King) && ((src.file - trg.file).abs == 2 && src.rank == trg.rank)
+  end
+
   def find_king(color)
     board.flatten.find { |square| square.is_a?(King) && square.color == color }
   end
@@ -669,6 +723,7 @@ class Board
     path_safe?(rook, king) &&
     first_move?(king) &&
     first_move?(rook)
+    # binding.pry
   end
 
   def path_safe?(src, trg)
@@ -677,14 +732,34 @@ class Board
 
     traversal = bfs_traversal(src, trg)
     route = route(traversal)
+    # binding.pry
 
-    opponent_player_color_pieces.none? do |piece| 
+    attackers = []
+    opponent_player_color_pieces.each do |piece| 
       route.each do |square|
-        piece if valid_move?(piece, src.class.new(*square, src.color)) && 
-                 path_free?(piece, src.class.new(*square, src.color))
+        attackers << piece if valid_move?(piece, src.class.new(*square, src.color)) && 
+                 no_obstacles_between?(piece, src.class.new(*square, src.color))
+                #  path_free?(piece, src.class.new(*square, src.color))
       end
     end
+    attackers.empty?
   end
+
+
+  # def in_check?(color)
+  #   color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
+  #   opponent_player_color_pieces = find_pieces_by(enemy_color)
+
+  #   current_player_king = find_kings.select { |king| king if king.color == color }.first
+  #   attackers = opponent_player_color_pieces.select { |piece| piece if valid_move?(piece, current_player_king) && path_free?(piece, current_player_king) }
+    
+  #   # return true unless attackers.empty? # -- future refactoring - change tests with 'false' for 'to be_nil'
+  #   unless attackers.empty? 
+  #     true
+  #   else
+  #     false
+  #   end
+  # end
 
   # def king_first_move?(king)
   #   original_king = @originals.flatten.find { |square| square.is_a?(King) && square.color == king.color }
@@ -725,7 +800,7 @@ class Board
     correct_rank?(src) && 
     adjacent?(src) && 
     just_double_moved?(src) &&
-    capture?(src, trg)
+    immediate_capture?(src, trg)
   end
 
   def correct_rank?(src)
@@ -770,7 +845,7 @@ class Board
 
   end
 
-  def capture?(src, trg)
+  def immediate_capture?(src, trg)
     left_adjacent = board[src.rank][src.file - 1]
     right_adjacent = board[src.rank][src.file + 1]
     # if left_adjacent != EMPTY_SQUARE
@@ -868,4 +943,86 @@ class Board
     ((bishops.first.rank - bishops.first.file).abs.odd? && (bishops.last.rank - bishops.last.file).abs.odd?))
   end
 
+  def fan(src, trg)
+    if src.is_a?(Pawn)
+      # binding.pry
+      # if !board[trg.rank][trg.file].nil? && board[trg.rank][trg.file].color != src.color
+      if capture?(src, trg)
+        if placing_in_check?(src, trg)
+          [convert_file_from(src.file), 'x', convert_file_from(trg.file), convert_rank_from(trg.rank), '+'].join
+        elsif promotion?(trg)
+          [convert_file_from(src.file), 'x', convert_file_from(trg.file), convert_rank_from(trg.rank), '=', promote(trg).symbol].join
+        else
+          [convert_file_from(src.file), 'x', convert_file_from(trg.file), convert_rank_from(trg.rank)].join
+        end
+      elsif en_passant?(src, trg)
+        [convert_file_from(src.file), 'x', convert_file_from(trg.file), convert_rank_from(trg.rank), "e.p."].join
+      elsif promotion?(trg)
+        [convert_file_from(trg.file), convert_rank_from(trg.rank), '=', promote(trg).symbol].join
+      elsif placing_in_check?(src, trg)
+        [convert_file_from(trg.file), convert_rank_from(trg.rank), '+'].join
+      else
+        [convert_file_from(trg.file), convert_rank_from(trg.rank)].join
+      end
+    elsif src.is_a?(King) && (src.file - trg.file == -2 && src.rank == trg.rank)
+      'O-O'
+    elsif src.is_a?(King) && (src.file - trg.file == 2 && src.rank == trg.rank)
+      'O-O-O'
+    else
+      # if !board[trg.rank][trg.file].nil? && board[trg.rank][trg.file].color != src.color
+      if capture?(src, trg)
+        if placing_in_check?(src, trg)
+          [src.symbol, 'x', convert_file_from(trg.file), convert_rank_from(trg.rank), '+'].join
+        else
+          [src.symbol, 'x', convert_file_from(trg.file), convert_rank_from(trg.rank)].join
+        end
+      elsif placing_in_check?(src, trg)
+        [src.symbol, convert_file_from(trg.file), convert_rank_from(trg.rank), '+'].join
+      else
+        [src.symbol, convert_file_from(trg.file), convert_rank_from(trg.rank)].join
+      end
+    end
+  end
+
+  def capture?(src, trg) #it's not capture, more target_sq_is_enemy?
+    !board[trg.rank][trg.file].nil? && board[trg.rank][trg.file].color != src.color
+  end
+
+  def convert_file_from(column)
+    (column.to_s.ord + 49).chr
+  end
+
+  def convert_rank_from(row)
+    board.size - row
+  end
+
+  def placing_in_check?(src, trg)
+    src.color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
+    original_trg = board[trg.rank][trg.file]
+
+    place(trg)
+    clean(src)
+    if in_check?(enemy_color)
+      place(src)
+      board[trg.rank][trg.file] = original_trg
+      true
+    else
+      place(src)
+      board[trg.rank][trg.file] = original_trg
+      false
+    end
+  end
+
+  #IDEA: change all file to x_coord and ranks to y_coord
+  # or simply file = x, rank = y
+  #shorter and more readable and intuitive
+  #think about it
+
+  # def rank_coord(input) #convert_rank
+    # board.board.size - input.split('').last.to_i
+  # end
+
+  # def file_coord(input) #convert_file
+  #   (input.split('').first.ord - 49).chr.to_i
+  # end
 end
