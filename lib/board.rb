@@ -1,6 +1,6 @@
 require 'pry'
 class Board
-  attr_reader :board, :history, :positions, :originals, :halfmove_clock, :move_sequence
+  attr_reader :board, :history, :positions, :originals, :halfmove_clock, :move_sequence, :pieces_taken
   
   SIZE = 8
   # EMPTY_SQUARE = ' '
@@ -13,6 +13,7 @@ class Board
     @originals = []
     @halfmove_clock = 0
     @move_sequence = []
+    @pieces_taken = []
   end
 
   def populate_board
@@ -309,6 +310,7 @@ class Board
             puts "Claim draw?"
           else
             move_sequence << fan(src, trg)
+            pieces_taken << board[trg.rank][trg.file] if capture?(src, trg)
             place(trg)
             clean(src)
             # castling(src.color, trg) if request_for_castling?(src, trg)
@@ -329,7 +331,6 @@ class Board
           end
           show
           report
-          #  puts try
         else
           if checkmate?(src.color)
             puts "Checkmate"
@@ -408,22 +409,6 @@ class Board
 
   def info_game
     ["White to move", "", "White player taken: figurine", "", "Black player taken: figurine", "", "Controls"]
-  end
-
-  def move_number
-    move_sequence.each_slice(2).to_a.each_with_index.map { |move, index| "#{index + 1}." }.join
-  end
-
-  def first_ply
-    move_sequence.each_slice(2).to_a.each_with_index.map { |move, index| move[0] }.join
-  end
-
-  def second_ply
-    move_sequence.each_slice(2).to_a.each_with_index.map { |move, index| move[1] }.join
-  end
-
-  def move
-    move_sequence.each_slice(2).to_a.join
   end
 
   def show #testing
@@ -1055,6 +1040,16 @@ class Board
       board[trg.rank][trg.file] = original_trg
       false
     end
+  end
+
+  def white_pieces_taken
+    pieces_taken.select  { |piece| piece if piece.color == 'white' }
+                .map { |piece| piece.symbol }
+  end
+
+  def black_pieces_taken
+    pieces_taken.select  { |piece| piece if piece.color == 'black' }
+                .map { |piece| piece.symbol }
   end
 
   #IDEA: change all file to x_coord and ranks to y_coord
