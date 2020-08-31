@@ -857,7 +857,7 @@ describe Board do
     end
   end
 
-  describe "#no_capture_moves?(src)" do
+  describe "#no_capture_moves?(src)" do #deleted because inside #no_legal_moves_to_escape
     context 'when King can not capture to escape check' do
       #Anderssen's mate
       let(:black_king) { King.new(6, 0, 'black') }
@@ -872,7 +872,7 @@ describe Board do
         test.place(white_king)
       end
 
-      it 'is checkmate' do
+      xit 'is checkmate' do
         color = 'black'
         result = test.no_capture_moves?(color)
         expect(result).to eq(true)
@@ -890,7 +890,7 @@ describe Board do
         test.place(queen)
       end
 
-      it 'is not checkmate' do
+      xit 'is not checkmate' do
         color = 'black'
         result = test.no_capture_moves?(color)
         expect(result).to eq(false)
