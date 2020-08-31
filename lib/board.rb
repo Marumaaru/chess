@@ -329,7 +329,7 @@ class Board
           end
           show
           report
-          # move_sequence.each_slice(2).with_index { |(a, b), idx| puts "#{idx + 1}. #{a} #{b}" }
+          #  puts try
         else
           if checkmate?(src.color)
             puts "Checkmate"
@@ -342,6 +342,9 @@ class Board
       end
     elsif request_for_castling?(src, trg)
       castling(src.color, trg) if castling_permissible?(src.color, trg)
+      move_sequence << fan(src, trg)
+      show
+      report
     else
       puts "Invalid move"
     end
@@ -356,6 +359,35 @@ class Board
     route << [node.file, node.rank]
   end
 
+  # def show #no lines between squares
+  #   puts "\n   a  b  c  d  e  f  g  h"
+  #   checkered_board.each_with_index do |row, idx|
+  #     puts "#{board.size - idx} " + row.join('') + " #{board.size - idx}"
+  #   end
+  #   puts "   a  b  c  d  e  f  g  h"
+  #   puts "\nCommands: (N)ew Game (S)ave (L)oad (Q)uit"
+  # end
+
+  # def show #with notation on the right of the board in 6 columns (48 moves in total) for entire screen
+  # needs this report:
+    # move_sequence.each_slice(2).to_a.each_with_index.map { |move, idx| "#{idx+1}. #{move.join(' ')}" }
+  # system 'clear'
+  #   puts "\n     a  b  c  d  e  f  g  h"
+  #   checkered_board.size.times do |idx|
+  #     printf "%3s %-26s %-3s %-20s %-20s %-20s %-20s %-20s %-20s\n", 
+  #       "#{board.size - idx}", 
+  #       checkered_board[idx].join, 
+  #       "#{board.size - idx}", 
+  #       "#{report[idx]}", 
+  #       "#{report[idx + board.size]}",
+  #       "#{report[idx + board.size * 2]}",
+  #       "#{report[idx + board.size * 3]}",
+  #       "#{report[idx + board.size * 4]}",
+  #       "#{report[idx + board.size * 5]}"
+  #   end
+  #   puts "     a  b  c  d  e  f  g  h"
+  #   puts "\nCommands: (N)ew Game (S)ave (L)oad (Q)uit"
+  # end
 
   # [Event "19th Chess Olympiad"]
   # [Site "Siegen, Germany"]
@@ -366,63 +398,70 @@ class Board
   # [Black "Miguel Najdorf"]
 
   def report
-    move_sequence.each_slice(2).with_index { |(a, b), idx| puts "#{idx + 1}. #{a} #{b}" }
+    # move_sequence.each_slice(2).with_index { |(a, b), idx| puts "#{idx + 1}. #{a} #{b}" }
+    # move_sequence.each_slice(2).with_index { |(a, b), idx| print " #{idx + 1}. #{a} #{b}" }
+    # move_sequence.each_slice(2).to_a.each_with_index.map { |move, idx| "#{idx+1}. #{move.join(' ')}" }
+      move_sequence.each_slice(2).to_a.each_with_index.map { |move, idx| "\e[94m#{idx+1}.\e[0m #{move.join(' ')}" }.each_slice(4).to_a
+      # move_sequence.each_slice(8).to_a.map { |line| line.each_slice(2).to_a.each_with_index.map { |move, idx| "#{idx+1}. #{move.join(' ')}" }  }
+    # end
   end
 
-  def show
-    # puts "Current turn: WHITE"
-    # puts "Black's Turn: "
-    # puts "Rook from A3 to D3"
-    # puts "White player taken: figurine"
-    # puts "Black player taken: figurine"
+  def info_game
+    ["White to move", "", "White player taken: figurine", "", "Black player taken: figurine", "", "Controls"]
+  end
 
-    puts "\n    a   b   c   d   e   f   g   h  "
-    puts '  +---+---+---+---+---+---+---+---+'
-    checkered_board.each_with_index do |row, idx|
-      # puts "#{board.size - idx} | " + row.join(' | ') + " | #{board.size - idx}"
-      puts "#{board.size - idx} |" + row.join('|') + "| #{board.size - idx}"
-      puts '  +---+---+---+---+---+---+---+---+'
+  def move_number
+    move_sequence.each_slice(2).to_a.each_with_index.map { |move, index| "#{index + 1}." }.join
+  end
+
+  def first_ply
+    move_sequence.each_slice(2).to_a.each_with_index.map { |move, index| move[0] }.join
+  end
+
+  def second_ply
+    move_sequence.each_slice(2).to_a.each_with_index.map { |move, index| move[1] }.join
+  end
+
+  def move
+    move_sequence.each_slice(2).to_a.join
+  end
+
+  def show #testing
+    system 'clear'
+    puts "\n     a  b  c  d  e  f  g  h"
+    checkered_board.size.times do |idx|
+      printf "%3s %-26s %-3s %-20s\n", 
+        "#{board.size - idx}", 
+        checkered_board[idx].join, 
+        "#{board.size - idx}",
+        if report[idx].nil?
+          ""
+        else
+          report[idx].join(' ')
+        end
     end
-    puts '    a   b   c   d   e   f   g   h  '
+    puts "     a  b  c  d  e  f  g  h"
     puts "\nCommands: (N)ew Game (S)ave (L)oad (Q)uit"
   end
 
-  # def try
+  # def show #original
+  #   # puts "Current turn: WHITE"
+  #   # puts "Black's Turn: "
+  #   # puts "White to move"
+  #   # puts "Rook from A3 to D3"
+  #   # puts "White player taken: figurine"
+  #   # puts "Black player taken: figurine"
 
-  #   <<~HEREDOC
-  #       a   b   c   d   e   f   g   h  
-  #     +---+---+---+---+---+---+---+---+
-  #      #{checkered_board[0][0]}|#{checkered_board[0][1]}|#{checkered_board[0][2]}|#{checkered_board[0][3]}|#{checkered_board[0][4]}|#{checkered_board[0][5]}|#{checkered_board[0][6]}|#{checkered_board[0][7]}|    Another info
-  #     +---+---+---+---+---+---+---+---+
-  #      #{checkered_board[1][0]}|#{checkered_board[1][1]}|#{checkered_board[1][2]}|#{checkered_board[1][3]}|#{checkered_board[1][4]}|#{checkered_board[1][5]}|#{checkered_board[1][6]}|#{checkered_board[1][7]}|    Another info
-  #     +---+---+---+---+---+---+---+---+
-
-  #   HEREDOC
-    
-    # puts "\n    a   b   c   d   e   f   g   h  "
-
-    # checkered_board.each_with_index do |row, idx|
-    # a=<<~HEREDOC
-    #   #{board.size - idx} |#{row.join('|')} | #{board.size - idx}
-    #     +---+---+---+---+---+---+---+---+
-    # HEREDOC
-    #   puts a
-    # end
-  # end
-
-  # def mapped_board
-  #   board.map do |row|
-  #     row.map do |square| 
-  #       if square == EMPTY_SQUARE
-  #         EMPTY_SQUARE
-  #       elsif square == '*'
-  #         '*'
-  #       else
-  #         square.symbol
-  #         # square.name
-  #       end
-  #     end
+  #   puts "\n    a   b   c   d   e   f   g   h  "
+  #   puts '  +---+---+---+---+---+---+---+---+'
+  #   checkered_board.each_with_index do |row, idx|
+  #     # puts "#{board.size - idx} | " + row.join(' | ') + " | #{board.size - idx}"
+  #     # puts "#{board.size - idx} |" + row.join('') + "| #{board.size - idx}"
+  #     puts "#{board.size - idx} |" + row.join('|') + "| #{board.size - idx}" #!!!
+  #     puts '  +---+---+---+---+---+---+---+---+'
   #   end
+  #   puts '    a   b   c   d   e   f   g   h  '
+  #   puts "\nCommands: (N)ew Game (S)ave (L)oad (Q)uit"
   # end
 
   def checkered_board
@@ -436,9 +475,11 @@ class Board
             # square = "\e[46m #{EMPTY_SQUARE} \e[0m" #bg_cyan
             # "\e[36;47m #{EMPTY_SQUARE} \e[0m" #cyan_on_light_gray
             # "\e[93;104m #{EMPTY_SQUARE} \e[0m" #lt_yellow_on_lt_blue
-            "\e[93;104m   \e[0m" #lt_yellow_on_lt_blue
+            # "\e[93;104m   \e[0m" #lt_yellow_on_lt_blue!!!
+            "\e[30;104m   \e[0m" #black_on_lt_blue
           else
-            "   "
+            # "   "!!!
+            "\e[30;47m   \e[0m" #black_on_bg_gray
           end
         else
           if  (row_idx - square_idx).abs.odd?
@@ -446,11 +487,14 @@ class Board
             # square = "\e[7m #{square.symbol} \e[27m" #reverse_color
             # square = "\e[46m #{square.symbol} \e[0m" #bg_cyan
             # "\e[36;47m #{square.symbol} \e[0m" #cyan_on_light_gray
-            "\e[93;104m #{square.symbol} \e[0m" #lt_yellow_on_lt_blue
+            # "\e[93;104m #{square.symbol} \e[0m" #lt_yellow_on_lt_blue!!!
+            "\e[30;104m #{square.symbol} \e[0m" #black_on_lt_blue
+
           else
             # " #{square.symbol} "
             # "\e[36m #{square.symbol} \e[0m" #cyan
-            "\e[93m #{square.symbol} \e[0m" #cyan
+            # "\e[93m #{square.symbol} \e[0m"!!!
+            "\e[30;47m #{square.symbol} \e[0m" #black_on_bg_gray
           end
         end
       end
