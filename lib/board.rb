@@ -1,5 +1,9 @@
+require './lib/move_validator'
 require 'pry'
+
 class Board
+  include MoveValidator
+
   attr_reader :board, :history, :positions, :originals, :halfmove_clock, :move_sequence, :pieces_taken
   
   SIZE = 8
@@ -17,17 +21,19 @@ class Board
   def populate_board
     place_rooks
 
-    save_rooks
+    # save_rooks
     
     place_knights
     place_bishops
     place_queens
     place_kings
 
-    save_kings
+    # save_kings
+    save_originals
 
     place_white_pawns
     place_black_pawns
+
     # @originals = [board[7][4], board[0][4], board[7][7], board[7][0], board[0][7], board[0][0]]
   end
 
@@ -84,121 +90,21 @@ class Board
     place(Pawn.new(7, 1, 'black'))
   end
 
-  def save_originals
-    @originals << [board[7][4], board[0][4], board[7][7], board[7][0], board[0][7], board[0][0]]
+  def save_originals #initial_piece_placement
+    @originals << board[7][4] << board[0][4] << board[7][7] << board[7][0] << board[0][7] << board[0][0]
   end
 
-  def save_kings
+  def save_kings #save_initial_kings_placement/positions
+    #like more #save initiial_kings_placement and #save initial_rooks_placement
     @originals << board[7][4]
     @originals << board[0][4]
   end
 
-  def save_rooks
+  def save_rooks ##save_initial_rooks_placement/positions
     @originals << board[7][7]
     @originals << board[7][0]
     @originals << board[0][7]
     @originals << board[0][0]
-  end
-
-  def valid_move?(src, trg)
-    if src.class == Pawn
-      if (src.rank - trg.rank).abs == 1 && src.file == trg.file &&
-        board[trg.rank][trg.file].nil?
-        if src.color == 'white'
-          if (src.rank - trg.rank) > 0
-            true
-          else
-            # puts "Invalid move"
-            false
-          end
-        elsif src.color == 'black'
-          if (src.rank - trg.rank) < 0
-            true
-          else
-            # puts "Invalid move"
-            false
-          end
-        end
-      elsif (src.rank - trg.rank).abs == 2 &&
-        board[trg.rank][trg.file].nil?
-        if src.rank == 6 || src.rank == 1
-          true
-        else
-          # puts "Invalid move"
-          false
-        end
-      elsif (src.rank - trg.rank).abs == (src.file - trg.file).abs &&
-            (src.rank - trg.rank).abs == 1 #&& otherwise can slide diagonally
-        # unless board[trg.rank][trg.file].color == src.color
-        if !board[trg.rank][trg.file].nil? && 
-          board[trg.rank][trg.file].color != src.color
-          if src.color == 'white'
-            if (src.rank - trg.rank) > 0
-              true
-            else
-              # puts "Invalid move"
-              false
-            end
-          elsif src.color == 'black'
-            if (src.rank - trg.rank) < 0
-              true
-            else
-              # puts "Invalid move"
-              false
-            end
-          end
-        elsif board[trg.rank][trg.file].nil? && 
-              en_passant?(src, trg)
-          true
-        else
-          # puts "Invalid move"
-          false
-        end
-      else
-        # puts "Invalid move"
-        false
-      end
-    elsif src.class == Knight
-      if ((src.file - trg.file).abs == 1 && (src.rank - trg.rank).abs == 2) ||
-        ((src.file - trg.file).abs == 2 && (src.rank - trg.rank).abs == 1)
-        true
-      else
-        # puts 'Invalid move'
-        false
-      end
-    elsif src.class == Bishop
-      if (src.rank - trg.rank).abs == (src.file - trg.file).abs
-        true
-      else
-        # puts 'Invalid move'
-        false
-      end
-    elsif src.class == Rook
-      if src.rank == trg.rank || src.file == trg.file
-        true
-      else
-        # puts 'Invalid move'
-        false
-      end
-    elsif src.class == King
-      if (src.rank - trg.rank).abs <= 1 && (src.file - trg.file).abs <= 1
-        true
-      else
-        # puts 'Invalid move'
-        false
-      end
-    elsif src.class == Queen
-      if (src.rank - trg.rank).abs == (src.file - trg.file).abs
-        true
-      elsif src.rank == trg.rank || src.file == trg.file
-        true
-      else
-        # puts 'Invalid move'
-        false
-      end
-    else
-      true
-    end
   end
 
   def path_free?(src, trg)
@@ -286,10 +192,14 @@ class Board
         puts "Invalid move: the path is not free"
       end
     elsif request_for_castling?(src, trg)
-      castling(src.color, trg) if castling_permissible?(src.color, trg)
-      move_sequence << fan(src, trg)
-      show
-      report
+      if castling_permissible?(src.color, trg)
+        castling(src.color, trg)
+        move_sequence << fan(src, trg)
+        show
+        report
+      else
+        puts "Castling is not possible"
+      end
     else
       puts "Invalid move"
     end

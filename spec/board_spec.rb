@@ -5,6 +5,7 @@ require './lib/rook'
 require './lib/pawn'
 require './lib/king'
 require './lib/queen'
+require './lib/move_validator'
 
 describe Board do
   subject(:test) { described_class.new }
