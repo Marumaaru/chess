@@ -8,7 +8,7 @@ class Board
   include Colorable
 
   attr_reader :board, :history, :positions, :originals, :halfmove_clock, :move_sequence, :pieces_taken
-  
+
   SIZE = 8
 
   def initialize
@@ -71,15 +71,26 @@ class Board
     SIZE.times { |file| place(Pawn.new(file, 1, 'black')) }
   end
 
-  def save_originals #initial_piece_placement
-    @originals.push(board[7][4], board[0][4], board[7][7], board[7][0], board[0][7], board[0][0])
+  # initial_piece_placement
+  def save_originals
+    save_kings
+    save_rooks
   end
 
-  def path_free?(src, trg) #path_legal?
-    (target_square_is_empty?(trg) || target_square_is_enemy?(src, trg)) && 
+  def save_kings
+    @originals.push(board[7][4], board[0][4])
+  end
+
+  def save_rooks
+    @originals.push(board[7][7], board[7][0], board[0][7], board[0][0])
+  end
+
+  # path_legal?
+  def path_free?(src, trg)
+    (target_square_is_empty?(trg) || target_square_is_enemy?(src, trg)) &&
       no_obstacles_between?(src, trg)
   end
-  
+
   def no_obstacles_between?(src, trg)
     traversal = bfs_traversal(src, trg)
     route = route(traversal)
@@ -117,50 +128,96 @@ class Board
     route << [node.file, node.rank]
   end
 
-  def piece_moves(from, to)
-    src = board[from[1]][from[0]]
-    trg = src.class.new(to[0], to[1], src.color)
-    if valid_move?(src, trg)
-      if path_free?(src, trg)
-        if !in_check?(src.color) || getting_out_of_check?(src, trg)
-          if draw?(src, trg)
-            puts "Claim draw?"
-          else
-            move_sequence << fan(src, trg)
-            pieces_taken << board[trg.rank][trg.file] if capture?(src, trg)
-            update_halfmove_clock(src, trg)
-            place(trg)
-            clean(src)
-            clean_adjacent(src, trg) if en_passant?(src, trg)
-            promote(trg) if promotion?(trg)
-            history << [src, trg]
-            positions << [piece_placement, en_passant?(src, trg), castling_rights(src.color)]
-          end
-          show
-          report
-        else
-          if checkmate?(src.color)
-            puts "Checkmate"
-          else
-            puts "Invalid move: You're in check"
-          end
-        end
-      else
-        puts "Invalid move: the path is not free"
-      end
-    elsif request_for_castling?(src, trg)
-      if castling_permissible?(trg)
-        move_sequence << fan(src, trg) #keep before #castling otherwise will not clear the king
-        castling(trg)
-        positions << [piece_placement, en_passant?(src, trg), castling_rights(src.color)]
-        show
-        report
-      else
-        puts "Castling is not possible"
-      end
-    else
-      puts "Invalid move"
-    end
+  def activate_piece(rank, file)
+    board[rank][file]
+  end
+
+  # def piece_moves(from, to)
+  def piece_moves(src, trg)
+    update_game_statistics(src, trg)
+    update_board(src, trg)
+    show
+    # elsif draw?(color)
+
+    # elsif checkmate?(src.color)
+
+    # if valid_move?(src, trg)
+    #   if path_free?(src, trg)
+    #     if !in_check?(src.color) || getting_out_of_check?(src, trg)
+    #       if draw?(color)
+    #         puts 'Claim draw?'
+    #       else
+    #         move_sequence << fan(src, trg)
+    #         pieces_taken << board[trg.rank][trg.file] if capture?(src, trg)
+    #         # src.color replace by side_to_move/color
+    #         positions << [src.color, piece_placement, en_passant_rights, castling_rights]
+    #         history << [src, trg]
+    #         update_halfmove_clock(src, trg)
+    #         place(trg)
+    #         clean(src)
+    #         clean_adjacent(src, trg) if en_passant?(src, trg)
+    #         promote(trg) if promotion?(trg)
+    #       end
+    #       show
+    #       report
+    #     else
+    #       if checkmate?(src.color)
+    #         puts 'Checkmate'
+    #       else
+    #         puts "Invalid move: You're in check"
+    #       end
+    #     end
+    #   else
+    #     puts 'Invalid move: the path is not free'
+    #   end
+    # elsif request_for_castling?(src, trg)
+    #   if castling_permissible?(trg)
+    #     move_sequence << fan(src, trg) # keep before #castling otherwise will not clear the king
+    #     castling(trg)
+    #     # src.color replace by side_to_move/color
+    #     positions << [src.color, piece_placement, en_passant_rights, castling_rights]
+    #     show
+    #     report
+    #   else
+    #     puts 'Castling is not possible'
+    #   end
+    # else
+    #   puts 'Invalid move'
+    # end
+  end
+
+  # def correct_color?(src, side_to_move)
+  #   src.color == side_to_move
+  # end
+
+  def legal_move?(src, trg)
+    (valid_move?(src, trg) &&
+    path_free?(src, trg) &&
+    (!in_check?(src.color) || getting_out_of_check?(src, trg))) ||
+    (request_for_castling?(src, trg) && castling_permissible?(trg))
+  end
+
+  def update_game_statistics(src, trg)
+    move_sequence << fan(src, trg)
+    pieces_taken << board[trg.rank][trg.file] if capture?(src, trg)
+    # src.color replace by side_to_move/color
+    positions << [src.color, piece_placement, en_passant_rights, castling_rights]
+    history << [src, trg]
+  end
+
+  def update_board(src, trg)
+    castling(trg) if castling_permissible?(trg)
+    place(trg)
+    clean(src)
+    clean_adjacent(src, trg) if en_passant?(src, trg)
+    promote(trg) if promotion?(trg)
+  end
+
+  def show_error(src, trg)
+    puts "Invalid move: You're in check" if in_check?(src.color)
+    puts 'Invalid move' if !valid_move?(src, trg) && !request_for_castling?(src, trg)
+    puts 'Invalid move: the path is not free' if !path_free?(src, trg) && valid_move?(src, trg) && !request_for_castling?(src, trg)
+    puts 'Castling is not possible' if request_for_castling?(src, trg) && !castling_permissible?(trg)
   end
 
   def update_halfmove_clock(src, trg)
@@ -173,7 +230,7 @@ class Board
 
   def report
     move_sequence.each_slice(2).to_a.each_with_index
-                 .map { |move, idx| "\e[94m#{idx+1}.\e[0m #{move.join(' ')}" }
+                 .map { |move, idx| "\e[94m#{idx + 1}.\e[0m #{move.join(' ')}" }
                  .each_slice(4).to_a
   end
 
@@ -181,28 +238,28 @@ class Board
     system 'clear'
     puts "\n     a  b  c  d  e  f  g  h"
     checkered_board.size.times do |idx|
-      printf "%3s %-26s %-3s %-20s\n", 
-        "#{board.size - idx}", 
-        checkered_board[idx].join, 
-        "#{board.size - idx}",
-        if report[idx].nil?
-          ""
-        else
-          report[idx].join(' ')
-        end
+      printf "%3s %-26s %-3s %-20s\n",
+             "#{board.size - idx}",
+             checkered_board[idx].join,
+             "#{board.size - idx}",
+             if report[idx].nil?
+               ''
+             else
+               report[idx].join(' ')
+             end
     end
-    puts "     a  b  c  d  e  f  g  h"
+    puts '     a  b  c  d  e  f  g  h'
     puts "\nCommands: (N)ew Game (S)ave (L)oad (Q)uit"
   end
 
   def checkered_board
     board.map.with_index do |row, row_idx|
-      row.map.with_index do |square, square_idx| 
+      row.map.with_index do |square, square_idx|
         if square.nil?
           if (row_idx - square_idx).abs.odd?
-            black_on_lt_blue("   ")
+            black_on_lt_blue('   ')
           else
-            black_on_gray("   ")
+            black_on_gray('   ')
           end
         else
           if (row_idx - square_idx).abs.odd?
@@ -232,7 +289,7 @@ class Board
   end
 
   def in_check?(color)
-    color == 'white' ? enemy_color = 'black' : enemy_color = 'white' #maybe opponent_color
+    color == 'white' ? enemy_color = 'black' : enemy_color = 'white' # maybe opponent_color
     opponent_player_color_pieces = find_pieces_by(enemy_color)
     current_player_king = find_king(color)
     opponent_player_color_pieces.any? { |piece| valid_move?(piece, current_player_king) && path_free?(piece, current_player_king) }
@@ -251,19 +308,21 @@ class Board
   end
 
   def checkmate?(color)
-    no_legal_move_to_escape?(color) &&
-    no_ally_can_capture_checking_piece?(color) &&
-    no_ally_can_block_checking_piece?(color)
+    in_check?(color) && 
+      no_legal_move_to_escape?(color) &&
+      no_ally_can_capture_checking_piece?(color) &&
+      no_ally_can_block_checking_piece?(color)
   end
 
   def no_legal_move_to_escape?(color)
     current_player_king = find_king(color)
     current_player_king.where_can_jump_from_here
-                      .select { |move| target_square_is_empty?(move) || target_square_is_enemy?(current_player_king, move) }
-                      .none? { |move| getting_out_of_check?(current_player_king, move) }
+                       .select { |move| target_square_is_empty?(move) ||
+                                        target_square_is_enemy?(current_player_king, move) }
+                       .none? { |move| getting_out_of_check?(current_player_king, move) }
   end
 
-  def find_attackers(color) #side_to_move #current_player_color
+  def find_attackers(color) # side_to_move #current_player_color
     color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
     current_player_king = find_king(color)
     opponent_player_color_pieces = find_pieces_by(enemy_color)
@@ -295,7 +354,7 @@ class Board
         traversal = bfs_traversal(attacker, current_player_king)
         route = route(traversal)
         route[1..route.size - 2].map do |square|
-          valid_move?(piece, attacker.class.new(*square, attacker.color)) && 
+          valid_move?(piece, attacker.class.new(*square, attacker.color)) &&
             path_free?(piece, attacker.class.new(*square, attacker.color)) &&
             piece != current_player_king
         end
@@ -303,7 +362,7 @@ class Board
     end.flatten.none?
   end
 
-  def castling(trg) #wing/side
+  def castling(trg) # wing/side
     king = find_king(trg.color)
     rook = find_rook(trg)
     perform_switch(king, rook, trg)
@@ -325,7 +384,7 @@ class Board
     src.is_a?(King) && ((src.file - trg.file).abs == 2 && src.rank == trg.rank)
   end
 
-  #magic numbers 7 and 0
+  # magic numbers 7 and 0
   def find_rook(trg)
     rooks = board.flatten.find_all { |square| square.is_a?(Rook) && square.color == trg.color }
     if trg.file == 6
@@ -339,45 +398,47 @@ class Board
     king = find_king(trg.color)
     rook = find_rook(trg)
     target_square_is_empty?(trg) &&
-    no_obstacles_between?(king, trg) &&
-    path_safe?(king, trg) &&
-    first_move?(king) &&
-    first_move?(rook)
+      no_obstacles_between?(king, trg) &&
+      path_safe?(king, trg) &&
+      first_move?(king) &&
+      first_move?(rook)
   end
 
   def path_safe?(src, trg)
     src.color == 'white' ? enemy_color = 'black' : enemy_color = 'white'
     opponent_player_color_pieces = find_pieces_by(enemy_color)
-
     traversal = bfs_traversal(src, trg)
     route = route(traversal)
-  
-    opponent_player_color_pieces.map do |piece| 
+    opponent_player_color_pieces.map do |piece|
       route.map do |square|
-        valid_move?(piece, src.class.new(*square, src.color)) && 
+        valid_move?(piece, src.class.new(*square, src.color)) &&
           no_obstacles_between?(piece, src.class.new(*square, src.color))
       end
     end.flatten.none?
   end
 
-  def first_move?(piece) #do not like original (maybe INITIAL) and square here
-    @originals.flatten.find do |square| 
+  def first_move?(piece) # do not like original (maybe INITIAL) and square here
+    @originals.flatten.find do |square|
       square.is_a?(piece.class) && square.color == piece.color && square.file == piece.file
     end.eql?(piece)
   end
 
-  def castling_rights(color)
-    king = find_king(color)
-    kingside_rook = board.flatten.find { |square| square.is_a?(Rook) && square.color == color && square.file == 7 }
-    queenside_rook = board.flatten.find { |square| square.is_a?(Rook) && square.color == color && square.file == 0 }
-    [first_move?(king) && first_move?(kingside_rook), first_move?(king) && first_move?(queenside_rook)]
+  def castling_rights
+    white_king = find_king('white')
+    black_king = find_king('black')
+    [first_move?(white_king), first_move?(black_king)]
+  end
+
+  def en_passant_rights
+    pawns = board.flatten.find_all { |square| square.is_a?(Pawn) }
+    pawns.map { |pawn| correct_rank?(pawn) && adjacent?(pawn) && just_double_moved? }
   end
 
   def en_passant?(src, trg)
-    correct_rank?(src) && 
-    adjacent?(src) && 
-    just_double_moved? &&
-    immediate_capture?(src, trg)
+    correct_rank?(src) &&
+      adjacent?(src) &&
+      just_double_moved? &&
+      immediate_capture?(src, trg)
   end
 
   def correct_rank?(src)
@@ -388,23 +449,16 @@ class Board
     left_adjacent = board[src.rank][src.file - 1]
     right_adjacent = board[src.rank][src.file + 1]
     (left_adjacent.is_a?(Pawn) && left_adjacent.color != src.color) ||
-     (right_adjacent.is_a?(Pawn) && right_adjacent.color != src.color)
+      (right_adjacent.is_a?(Pawn) && right_adjacent.color != src.color)
   end
 
   def just_double_moved?
-    @history.last.last.rank - @history.last.first.rank == 2
+    (@history.last.last.rank - @history.last.first.rank).abs == 2
   end
 
   def immediate_capture?(src, trg)
-    left_adjacent = board[src.rank][src.file - 1]
-    right_adjacent = board[src.rank][src.file + 1]
-    if !left_adjacent.nil?
-      (trg.rank == left_adjacent.rank - 1 && trg.file == left_adjacent.file) ||
-      (trg.rank == left_adjacent.rank + 1 && trg.file == left_adjacent.file)
-    elsif !right_adjacent.nil?
-      (trg.rank == right_adjacent.rank - 1 && trg.file == right_adjacent.file) ||
-      (trg.rank == right_adjacent.rank + 1 && trg.file == right_adjacent.file)
-    end
+    pawn_diagonal_move?(src, trg) &&
+    (board[trg.rank - 1][trg.file].is_a?(Pawn) || board[trg.rank + 1][trg.file].is_a?(Pawn))
   end
 
   def clean_adjacent(src, trg)
@@ -418,9 +472,9 @@ class Board
     end
   end
 
-  def promotion?(trg) #eligible_for_promotion?(trg)
+  def promotion?(trg) # eligible_for_promotion?(trg)
     (trg.is_a?(Pawn) && trg.rank == 0 && trg.color == 'white') ||
-     (trg.is_a?(Pawn) && trg.rank == 7 && trg.color == 'black')
+      (trg.is_a?(Pawn) && trg.rank == 7 && trg.color == 'black')
   end
 
   def promote(trg)
@@ -442,21 +496,16 @@ class Board
     end
   end
 
+  def draw?(color)
+    stalemate?(color) || threefold_repetition? || fifty_move? || dead_position?
+  end
+
   def stalemate?(color)
     !in_check?(color) && no_legal_move_to_escape?(color)
   end
 
-
-  def draw?(src, trg)
-    threefold_repetition?(src, trg) || fifty_move? || dead_position?
-  end
-
-  #need to add side_to_move support, so
-  #for each player threefold_repetition
-  #or try to sort positions by odd and even 
-  def threefold_repetition?(src, trg)
-    actual_position = [piece_placement, en_passant?(src, trg), castling_rights(src.color)]
-    positions.count { |position| position == actual_position } > 2
+  def threefold_repetition?
+    positions.group_by(&:itself).transform_values(&:count).any? { |k, v| v > 2 }
   end
 
   def piece_placement
@@ -470,7 +519,7 @@ class Board
   def dead_position?
     bare_kings? || king_and_minor_vs_bare_king? || king_and_bishop_same_color?
   end
-  
+
   def bare_kings?
     board.flatten.all? { |square| square.is_a?(King) || square.nil? }
   end
@@ -479,12 +528,15 @@ class Board
     minor_list = board.flatten.select { |square| !square.nil? && square.class != King }
     minor_list.size == 1 && minor_list.all? { |el| el.is_a?(Bishop) || el.is_a?(Knight) }
   end
-  
+
   def king_and_bishop_same_color?
     bishops = board.flatten.select { |square| !square.nil? && square.class != King }
-    (bishops.size == 2 && bishops.all? { |el| el.is_a?(Bishop) }) &&
-    (bishops.all? { |bishop| (bishop.rank - bishop.file).abs.even? } ||
-    bishops.all? { |bishop| (bishop.rank - bishop.file).abs.odd? })
+    # (bishops.size == 2 && bishops.all? { |el| el.is_a?(Bishop) }) &&
+      # (bishops.all? { |bishop| (bishop.rank - bishop.file).abs.even? } ||
+      # bishops.all? { |bishop| (bishop.rank - bishop.file).abs.odd? })
+      bishops.size == 2 &&
+      bishops.all? { |el| el.is_a?(Bishop) &&
+                          ((el.rank - el.file).abs.even? || (el.rank - el.file).abs.odd?) }
   end
 
   def fan(src, trg)
@@ -495,14 +547,14 @@ class Board
     fan.push(convert_file_from(trg.file))
     fan.push(convert_rank_from(trg.rank))
     fan.push('=').push(promote(trg).symbol) if promotion?(trg)
-    fan.push("e.p.") if en_passant?(src, trg)
+    fan.push('e.p.') if en_passant?(src, trg)
     fan.push('+') if placing_in_check?(src, trg)
     fan.clear.push('O-O') if request_for_castling?(src, trg) && trg.file == 6
     fan.clear.push('O-O-O') if request_for_castling?(src, trg) && trg.file == 2
     fan.join
   end
 
-  def capture?(src, trg) #it's not capture, more target_sq_is_enemy?
+  def capture?(src, trg) # it's not capture, more target_sq_is_enemy?
     !board[trg.rank][trg.file].nil? && board[trg.rank][trg.file].color != src.color
   end
 
