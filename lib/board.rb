@@ -132,63 +132,10 @@ class Board
     board[rank][file]
   end
 
-  # def piece_moves(from, to)
   def piece_moves(src, trg)
     update_game_statistics(src, trg)
     update_board(src, trg)
-    show
-    # elsif draw?(color)
-
-    # elsif checkmate?(src.color)
-
-    # if valid_move?(src, trg)
-    #   if path_free?(src, trg)
-    #     if !in_check?(src.color) || getting_out_of_check?(src, trg)
-    #       if draw?(color)
-    #         puts 'Claim draw?'
-    #       else
-    #         move_sequence << fan(src, trg)
-    #         pieces_taken << board[trg.rank][trg.file] if capture?(src, trg)
-    #         # src.color replace by side_to_move/color
-    #         positions << [src.color, piece_placement, en_passant_rights, castling_rights]
-    #         history << [src, trg]
-    #         update_halfmove_clock(src, trg)
-    #         place(trg)
-    #         clean(src)
-    #         clean_adjacent(src, trg) if en_passant?(src, trg)
-    #         promote(trg) if promotion?(trg)
-    #       end
-    #       show
-    #       report
-    #     else
-    #       if checkmate?(src.color)
-    #         puts 'Checkmate'
-    #       else
-    #         puts "Invalid move: You're in check"
-    #       end
-    #     end
-    #   else
-    #     puts 'Invalid move: the path is not free'
-    #   end
-    # elsif request_for_castling?(src, trg)
-    #   if castling_permissible?(trg)
-    #     move_sequence << fan(src, trg) # keep before #castling otherwise will not clear the king
-    #     castling(trg)
-    #     # src.color replace by side_to_move/color
-    #     positions << [src.color, piece_placement, en_passant_rights, castling_rights]
-    #     show
-    #     report
-    #   else
-    #     puts 'Castling is not possible'
-    #   end
-    # else
-    #   puts 'Invalid move'
-    # end
   end
-
-  # def correct_color?(src, side_to_move)
-  #   src.color == side_to_move
-  # end
 
   def legal_move?(src, trg)
     (valid_move?(src, trg) &&
@@ -235,8 +182,7 @@ class Board
   end
 
   def show
-    system 'clear'
-    puts "\n     a  b  c  d  e  f  g  h"
+    puts "     a  b  c  d  e  f  g  h"
     checkered_board.size.times do |idx|
       printf "%3s %-26s %-3s %-20s\n",
              "#{board.size - idx}",
@@ -249,7 +195,6 @@ class Board
              end
     end
     puts '     a  b  c  d  e  f  g  h'
-    puts "\nCommands: (N)ew Game (S)ave (L)oad (Q)uit"
   end
 
   def checkered_board
@@ -316,10 +261,10 @@ class Board
 
   def no_legal_move_to_escape?(color)
     current_player_king = find_king(color)
-    current_player_king.where_can_jump_from_here
-                       .select { |move| target_square_is_empty?(move) ||
-                                        target_square_is_enemy?(current_player_king, move) }
-                       .none? { |move| getting_out_of_check?(current_player_king, move) }
+    valid_moves = current_player_king.where_can_jump_from_here
+                                     .select { |move| target_square_is_empty?(move) ||
+                                                      target_square_is_enemy?(current_player_king, move) }
+    valid_moves.none? { |move| getting_out_of_check?(current_player_king, move) } if valid_moves.any?
   end
 
   def find_attackers(color) # side_to_move #current_player_color
@@ -536,7 +481,7 @@ class Board
       # bishops.all? { |bishop| (bishop.rank - bishop.file).abs.odd? })
       bishops.size == 2 &&
       bishops.all? { |el| el.is_a?(Bishop) &&
-                          ((el.rank - el.file).abs.even? || (el.rank - el.file).abs.odd?) }
+                        ((el.rank - el.file).abs.even? || (el.rank - el.file).abs.odd?) }
   end
 
   def fan(src, trg)
