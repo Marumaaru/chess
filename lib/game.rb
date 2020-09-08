@@ -1,7 +1,7 @@
 require './lib/board'
+require './lib/bishop'
 require './lib/knight'
 require './lib/rook'
-require './lib/bishop'
 require './lib/queen'
 require './lib/king'
 require './lib/pawn'
@@ -17,12 +17,68 @@ class Game
     @current_player_idx = 0
   end
 
-  def starting_coords(input)
-    [rank_coord(split_lan(input)[0]), file_coord(split_lan(input)[0])]
+  def play
+    until board.checkmate?(side_to_move) || board.draw?(side_to_move)
+      puts display_game_header(side_to_move, board.white_pieces_taken, board.black_pieces_taken)
+      board.show
+      print display_current_turn(side_to_move)
+      move(side_to_move)
+      next_player
+    end
+    puts 'Checkmate' if board.checkmate?(side_to_move)
+    puts 'Claim draw?' if board.draw?(side_to_move)
   end
 
-  def ending_coords(input)
-    [rank_coord(split_lan(input)[1]), file_coord(split_lan(input)[1])]
+  def move(side_to_move)
+    input = gets.chomp
+    src = board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
+    trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move) if !src.nil?
+    # validate_player_input(input)
+    until input.match?(/[a-zA-Z][1-8]/) && board.legal_move?(src, trg) && correct_color?(src, side_to_move)
+      puts display_error_invalid_input
+      puts "The square #{split_lan(input).first} is empty" if src.nil?
+      puts "You can't move #{src.color} #{src.class}. You're playing #{side_to_move.capitalize}'s" if !correct_color?(src, side_to_move) && !src.nil?
+      board.show_error(src, trg) if correct_color?(src, side_to_move) && !board.legal_move?(src, trg)
+      input = gets.chomp
+      src = board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
+      trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move)
+    end 
+    board.piece_moves(src, trg)
+  end
+
+  def correct_color?(src, side_to_move)
+    !src.nil? && src.color == side_to_move
+  end
+
+  def validate_player_input(input)
+    until input.match?(/[a-zA-Z][1-8]/)
+      puts display_error_invalid_input
+      input = gets.chomp
+    end
+  end
+
+  # def starting_coords(input) #origin_square
+  #   [file_coord(split_lan(input)[0]), rank_coord(split_lan(input)[0])]
+  # end
+
+  def starting_rank_coords(input)
+    rank_coord(split_lan(input).first)
+  end
+
+  def starting_file_coords(input)
+    file_coord(split_lan(input).first)
+  end
+
+  # def ending_coords(input) #target_square
+  #   [file_coord(split_lan(input)[1]), rank_coord(split_lan(input)[1])]
+  # end
+
+  def ending_rank_coords(input)
+    rank_coord(split_lan(input).last)
+  end
+
+  def ending_file_coords(input)
+    file_coord(split_lan(input).last)
   end
 
   def split_lan(input)
@@ -38,114 +94,26 @@ class Game
   end
 
   def setup
-    create_player(1)
-    create_player(2)
-    populate_board
-    board.show
+    create_player('white')
+    create_player('black')
+    board.populate_board
   end
 
-  def create_player(player_number)
-    # print display_name_prompt(player_number)
+  def create_player(color)
+    print display_name_prompt(color)
     name = gets.chomp
-    players << Player.new(name, assign_color(player_number))
+    players << Player.new(name, color)
   end
 
-  def assign_color(player_number)
-    player_number.eql?(1) ? 'white' : 'black'
+  def current_player
+    players[current_player_idx]
   end
 
-  def populate_board
-    place_rooks
-    place_knights
-    place_bishops
-    place_queens
-    place_kings
-    place_white_pawns
-    place_black_pawns
+  def side_to_move
+    players[current_player_idx].color
   end
 
-  def place_rooks
-    board.place(Rook.new(0, 7, "\u2656"))
-    board.place(Rook.new(7, 7, "\u2656"))
-    board.place(Rook.new(0, 0, "\u265C"))
-    board.place(Rook.new(7, 0, "\u265C"))
-  end
-
-  def place_knights
-    board.place(Knight.new(1, 7, "\u2658"))
-    board.place(Knight.new(6, 7, "\u2658"))
-    board.place(Knight.new(1, 0, "\u265E"))
-    board.place(Knight.new(6, 0, "\u265E"))
-  end
-
-  def place_bishops
-    board.place(Bishop.new(2, 7, "\u2657"))
-    board.place(Bishop.new(5, 7, "\u2657"))
-    board.place(Bishop.new(2, 0, "\u265D"))
-    board.place(Bishop.new(5, 0, "\u265D"))
-  end
-
-  def place_queens
-    board.place(Queen.new(3, 7, "\u2655"))
-    board.place(Queen.new(3, 0, "\u265B"))
-  end
-
-  def place_kings
-    board.place(King.new(4, 7, "\u2654"))
-    board.place(King.new(4, 0, "\u265A"))
-  end
-
-  def place_white_pawns
-    board.place(Pawn.new(0, 6, "\u2659"))
-    board.place(Pawn.new(1, 6, "\u2659"))
-    board.place(Pawn.new(2, 6, "\u2659"))
-    board.place(Pawn.new(3, 6, "\u2659"))
-    board.place(Pawn.new(4, 6, "\u2659"))
-    board.place(Pawn.new(5, 6, "\u2659"))
-    board.place(Pawn.new(6, 6, "\u2659"))
-    board.place(Pawn.new(7, 6, "\u2659"))
-  end
-
-  def place_black_pawns
-    board.place(Pawn.new(0, 1, "\u265f"))
-    board.place(Pawn.new(1, 1, "\u265f"))
-    board.place(Pawn.new(2, 1, "\u265f"))
-    board.place(Pawn.new(3, 1, "\u265f"))
-    board.place(Pawn.new(4, 1, "\u265f"))
-    board.place(Pawn.new(5, 1, "\u265f"))
-    board.place(Pawn.new(6, 1, "\u265f"))
-    board.place(Pawn.new(7, 1, "\u265f"))
+  def next_player
+    @current_player_idx = (@current_player_idx + 1) % 2
   end
 end
-
-# def make_move(input)
-#   active_piece = activate_piece_by(input)
-#   new_piece = active_piece.class.new(convert_file_algebraic_notation(input), convert_rank_algebraic_notation(input), active_piece.symbol)
-#   # board.bfs_traversal(active_piece, new_piece)
-#   board.clean(active_piece)
-#   board.place(new_piece)
-#   board.show
-# end
-
-# def activate_piece_by(input)
-#   list_of_pieces = board.find_pieces_by(input)
-#   list_of_pieces.each do |piece| #use .select???
-#     return piece if piece.where_can_jump_from_here(piece.file, piece.rank).include?(convert_move(input))
-#   end
-# end
-
-# def convert_move(input)
-#   trg_file = convert_file_algebraic_notation(input)
-#   trg_rank = convert_rank_algebraic_notation(input)
-#   [trg_file, trg_rank]
-# end
-
-# def convert_rank_algebraic_notation(input)
-#   third_letter = input.split('')[2].to_i
-#   board.board.size - third_letter
-# end
-
-# def convert_file_algebraic_notation(input)
-#   second_letter = input.split('')[1]
-#   (second_letter.ord - 49).chr.to_i
-# end
