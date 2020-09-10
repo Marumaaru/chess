@@ -19,6 +19,7 @@ class Game
 
   def play
     until board.checkmate?(side_to_move) || board.draw?(side_to_move)
+      puts display_menu_options
       puts display_game_header(side_to_move, board.white_pieces_taken, board.black_pieces_taken)
       board.show
       print display_current_turn(side_to_move)
@@ -33,28 +34,37 @@ class Game
     input = gets.chomp
     src = board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
     trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move) if !src.nil?
-    # validate_player_input(input)
-    until input.match?(/[a-zA-Z][1-8]/) && board.legal_move?(src, trg) && correct_color?(src, side_to_move)
-      puts display_error_invalid_input
-      puts "The square #{split_lan(input).first} is empty" if src.nil?
-      puts "You can't move #{src.color} #{src.class}. You're playing #{side_to_move.capitalize}'s" if !correct_color?(src, side_to_move) && !src.nil?
-      board.show_error(src, trg) if correct_color?(src, side_to_move) && !board.legal_move?(src, trg)
+
+    until valid_input?(input) && !src.nil? && correct_color?(src, side_to_move) && board.legal_move?(src, trg)
+      show_error(src, trg, side_to_move, input)
       input = gets.chomp
       src = board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
-      trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move)
-    end 
+      trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move) if !src.nil?
+    end
     board.piece_moves(src, trg)
+  end
+
+  def show_error(src, trg, side_to_move, input)
+    if !valid_input?(input)
+      puts display_error_invalid_input
+    elsif src.nil?
+      puts "The square #{split_lan(input).first} is empty"
+    elsif !correct_color?(src, side_to_move)
+      puts "You can't move #{src.color} #{src.class}. You're playing #{side_to_move.capitalize}'s"
+    elsif !board.legal_move?(src, trg)
+      puts "Invalid move: You're in check" if board.in_check?(side_to_move)
+      puts 'Invalid move' if !board.valid_move?(src, trg) && !board.request_for_castling?(src, trg)
+      puts 'Invalid move: the path is not free' if !board.path_free?(src, trg) && board.valid_move?(src, trg) && !board.request_for_castling?(src, trg)
+      puts 'Castling is not possible' if board.request_for_castling?(src, trg) && !board.castling_permissible?(trg)
+    end
   end
 
   def correct_color?(src, side_to_move)
     !src.nil? && src.color == side_to_move
   end
 
-  def validate_player_input(input)
-    until input.match?(/[a-zA-Z][1-8]/)
-      puts display_error_invalid_input
-      input = gets.chomp
-    end
+  def valid_input?(input)
+    input.match?(/^[a-h][1-8][a-h][1-8]$/)
   end
 
   # def starting_coords(input) #origin_square
