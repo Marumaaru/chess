@@ -5,6 +5,7 @@ require './lib/rook'
 require './lib/queen'
 require './lib/king'
 require './lib/pawn'
+require 'yaml'
 
 class Game
   Player = Struct.new(:name, :color)
@@ -31,23 +32,33 @@ class Game
   end
 
   def move(side_to_move)
-    input = gets.chomp
+    input = validated_input
+    top_bar_menu(input.upcase) if input.match?(/^[nlsmq]$/i)
     src = board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
     trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move) if !src.nil?
-
-    until valid_input?(input) && !src.nil? && correct_color?(src, side_to_move) && board.legal_move?(src, trg)
+    until !src.nil? && correct_color?(src, side_to_move) && board.legal_move?(src, trg)
       show_error(src, trg, side_to_move, input)
-      input = gets.chomp
+      input = validated_input
+      top_bar_menu(input.upcase) if input.match?(/^[nlsmq]$/i)
       src = board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
       trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move) if !src.nil?
     end
     board.piece_moves(src, trg)
   end
 
-  def show_error(src, trg, side_to_move, input)
-    if !valid_input?(input)
+  def validated_input
+    input = gets.chomp
+    until valid_input?(input)
       puts display_error_invalid_input
-    elsif src.nil?
+      input = gets.chomp
+    end
+    input
+  end
+
+  def show_error(src, trg, side_to_move, input)
+    # if !valid_input?(input)
+      # puts display_error_invalid_input
+    if src.nil?
       puts "The square #{split_lan(input).first} is empty"
     elsif !correct_color?(src, side_to_move)
       puts "You can't move #{src.color} #{src.class}. You're playing #{side_to_move.capitalize}'s"
@@ -64,7 +75,81 @@ class Game
   end
 
   def valid_input?(input)
-    input.match?(/^[a-h][1-8][a-h][1-8]$/)
+    input.match?(/^[a-h][1-8][a-h][1-8]$|^[nlsmq]$/i)
+  end
+
+  def top_bar_menu(input)
+    case input
+    when 'N'
+      # puts display_warning_leaving_unsaved_game
+      start_two_players_game
+    when 'L'
+      # puts display_warning_leaving_unsaved_game
+      load_game.play
+    when 'S'
+      save_game
+    when 'M'
+      # puts display_warning_leaving_unsaved_game
+      main_menu
+    when 'Q'
+      # puts display_warning_leaving_unsaved_game
+      quit
+    end
+  end
+
+  def to_yaml
+    YAML::dump(self)
+  end
+
+  def from_yaml(game)
+    YAML.load(File.read(game))
+  end
+  
+  def save_game
+    filename = prompt_name 
+    File.open(File.join(Dir.pwd, "/saved/#{filename}.yaml"), 'w') { |file| file << to_yaml }
+    puts display_report_game_saved
+    resume_game
+  end
+
+  def load_game
+    show_saved_games
+    print "\nWhat game would you like to load: "
+    input = gets.chomp
+    print display_game_loading
+    from_yaml("./saved/#{input}.yaml")
+  end
+
+  def show_saved_games
+    system 'clear'
+    puts "Available games to load:\n\n"
+    Dir.entries('saved/')
+        .reject { |entry| File.directory?(entry) }
+        .each { |file| puts "  > " + File.basename(file, '.yaml') }
+  end
+
+  def prompt_name
+    print "\nPlease enter name for the game to save: "
+    # print "\nSave game as: "
+    input = gets.chomp
+    until !File.exist?(File.join(Dir.pwd, "/saved/#{input}.yaml"))
+      print "\nThe file '#{input}' already exists. Would you like to overwrite it?\nPress 'y' for yes (or any other key to keep the existing file): "
+      answer = gets[0].downcase
+      break if answer == 'y'
+      print "\nPlease enter name for the game to save: "
+      input = gets.chomp
+    end
+    input
+  end
+
+  def resume_game
+    print "\nResume game?\nPress 'y' for yes (or any other key to return to main menu): "
+    answer = gets[0].downcase
+    if answer == 'y'
+      play
+    else
+      main_menu
+    end
   end
 
   # def starting_coords(input) #origin_square
@@ -92,7 +177,7 @@ class Game
   end
 
   def split_lan(input)
-    input.scan(/[a-z][1-8]/)
+    input.downcase.scan(/[a-z][1-8]/)
   end
 
   def rank_coord(input) #convert_rank
