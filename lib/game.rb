@@ -1,10 +1,4 @@
 require './lib/board'
-require './lib/bishop'
-require './lib/knight'
-require './lib/rook'
-require './lib/queen'
-require './lib/king'
-require './lib/pawn'
 require 'yaml'
 
 class Game
@@ -33,13 +27,13 @@ class Game
 
   def move(side_to_move)
     input = validated_input
-    top_bar_menu(input.upcase) if input.match?(/^[nlsmq]$/i)
+    confirm(input.upcase) if input.match?(/^[nlsmq]$/i)
     src = board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
     trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move) if !src.nil?
     until !src.nil? && correct_color?(src, side_to_move) && board.legal_move?(src, trg)
       show_error(src, trg, side_to_move, input)
       input = validated_input
-      top_bar_menu(input.upcase) if input.match?(/^[nlsmq]$/i)
+      confirm(input.upcase) if input.match?(/^[nlsmq]$/i)
       src = board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
       trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move) if !src.nil?
     end
@@ -49,24 +43,22 @@ class Game
   def validated_input
     input = gets.chomp
     until valid_input?(input)
-      puts display_error_invalid_input
+      print display_error_invalid_move_input
       input = gets.chomp
     end
     input
   end
 
   def show_error(src, trg, side_to_move, input)
-    # if !valid_input?(input)
-      # puts display_error_invalid_input
     if src.nil?
-      puts "The square #{split_lan(input).first} is empty"
+      print display_error_src_is_empty(input)
     elsif !correct_color?(src, side_to_move)
-      puts "You can't move #{src.color} #{src.class}. You're playing #{side_to_move.capitalize}'s"
+      print display_error_wrong_color(src, side_to_move)
     elsif !board.legal_move?(src, trg)
-      puts "Invalid move: You're in check" if board.in_check?(side_to_move)
-      puts 'Invalid move' if !board.valid_move?(src, trg) && !board.request_for_castling?(src, trg)
-      puts 'Invalid move: the path is not free' if !board.path_free?(src, trg) && board.valid_move?(src, trg) && !board.request_for_castling?(src, trg)
-      puts 'Castling is not possible' if board.request_for_castling?(src, trg) && !board.castling_permissible?(trg)
+      print display_error_invalid_move_check if board.in_check?(side_to_move)
+      print display_error_invalid_move(src) if !board.valid_move?(src, trg) && !board.request_for_castling?(src, trg)
+      print display_error_invalid_move_path if !board.path_free?(src, trg) && board.valid_move?(src, trg) && !board.request_for_castling?(src, trg)
+      print display_error_invalid_move_castling if board.request_for_castling?(src, trg) && !board.castling_permissible?(trg)
     end
   end
 
@@ -81,18 +73,14 @@ class Game
   def top_bar_menu(input)
     case input
     when 'N'
-      # puts display_warning_leaving_unsaved_game
       start_two_players_game
     when 'L'
-      # puts display_warning_leaving_unsaved_game
-      load_game.play
+      load_game.play 
     when 'S'
       save_game
     when 'M'
-      # puts display_warning_leaving_unsaved_game
       main_menu
     when 'Q'
-      # puts display_warning_leaving_unsaved_game
       quit
     end
   end
@@ -106,7 +94,7 @@ class Game
   end
   
   def save_game
-    filename = prompt_name 
+    filename = prompt_save_name 
     File.open(File.join(Dir.pwd, "/saved/#{filename}.yaml"), 'w') { |file| file << to_yaml }
     puts display_report_game_saved
     resume_game
@@ -114,36 +102,48 @@ class Game
 
   def load_game
     show_saved_games
-    print "\nWhat game would you like to load: "
-    input = gets.chomp
-    print display_game_loading
-    from_yaml("./saved/#{input}.yaml")
+    filename = choose_game_to_load
+    # print display_game_loading
+    from_yaml("./saved/#{filename}.yaml")
+  end
+
+  def saved_games
+    Dir.entries('saved/')
+        .reject { |entry| File.directory?(entry) }
+        .map { |file| File.basename(file, '.yaml') }
   end
 
   def show_saved_games
     system 'clear'
-    puts "Available games to load:\n\n"
-    Dir.entries('saved/')
-        .reject { |entry| File.directory?(entry) }
-        .each { |file| puts "  > " + File.basename(file, '.yaml') }
+    puts "Saved games:\n\n"
+    saved_games.each { |game| puts "  > #{game}" }
   end
 
-  def prompt_name
-    print "\nPlease enter name for the game to save: "
-    # print "\nSave game as: "
+  def choose_game_to_load
+    print display_load_game_prompt
+    input = gets.downcase.chomp
+    until saved_games.include?(input)
+      print display_error_no_game_to_load
+      input = gets.downcase.chomp
+    end
+    input
+  end
+
+  def prompt_save_name
+    print display_save_game_prompt
     input = gets.chomp
     until !File.exist?(File.join(Dir.pwd, "/saved/#{input}.yaml"))
-      print "\nThe file '#{input}' already exists. Would you like to overwrite it?\nPress 'y' for yes (or any other key to keep the existing file): "
+      print display_warning_existing_filename(input)
       answer = gets[0].downcase
       break if answer == 'y'
-      print "\nPlease enter name for the game to save: "
+      print display_save_game_prompt
       input = gets.chomp
     end
     input
   end
 
   def resume_game
-    print "\nResume game?\nPress 'y' for yes (or any other key to return to main menu): "
+    print display_resume_game_prompt
     answer = gets[0].downcase
     if answer == 'y'
       play
@@ -152,9 +152,15 @@ class Game
     end
   end
 
-  # def starting_coords(input) #origin_square
-  #   [file_coord(split_lan(input)[0]), rank_coord(split_lan(input)[0])]
-  # end
+  def confirm(input)
+    print display_warning_unsaved_game
+    answer = gets[0].downcase
+    if answer == 'y'
+      top_bar_menu(input)
+    else
+      play
+    end
+  end
 
   def starting_rank_coords(input)
     rank_coord(split_lan(input).first)
@@ -163,10 +169,6 @@ class Game
   def starting_file_coords(input)
     file_coord(split_lan(input).first)
   end
-
-  # def ending_coords(input) #target_square
-  #   [file_coord(split_lan(input)[1]), rank_coord(split_lan(input)[1])]
-  # end
 
   def ending_rank_coords(input)
     rank_coord(split_lan(input).last)
@@ -180,15 +182,16 @@ class Game
     input.downcase.scan(/[a-z][1-8]/)
   end
 
-  def rank_coord(input) #convert_rank
+  def rank_coord(input)
     board.board.size - input.split('').last.to_i
   end
 
-  def file_coord(input) #convert_file
+  def file_coord(input)
     (input.split('').first.ord - 49).chr.to_i
   end
 
   def setup
+    system 'clear'
     create_player('white')
     create_player('black')
     board.populate_board
