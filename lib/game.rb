@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require './lib/board'
 require 'yaml'
 
@@ -13,31 +14,53 @@ class Game
   end
 
   def play
-    until board.checkmate?(side_to_move) || board.draw?(side_to_move)
-      puts display_menu_options
-      puts display_game_header(side_to_move, board.white_pieces_taken, board.black_pieces_taken)
-      board.show
-      print display_current_turn(side_to_move)
-      move(side_to_move)
-      next_player
-    end
+    players_take_turns until game_finished?
+    update_display
+    announce_results
+  end
+
+  def game_finished?
+    board.checkmate?(side_to_move) || board.draw?(side_to_move)
+  end
+
+  def players_take_turns
+    update_display
+    move
+    next_player
+  end
+
+  def update_display
+    puts display_ribbon_bar
+    puts display_tag_roster(side_to_move, board.white_pieces_taken, board.black_pieces_taken)
+    board.show
+    print display_current_turn(side_to_move)
+  end
+
+  def announce_results
     puts 'Checkmate' if board.checkmate?(side_to_move)
     puts 'Claim draw?' if board.draw?(side_to_move)
   end
 
-  def move(side_to_move)
-    input = validated_input
-    confirm(input.upcase) if input.match?(/^[nlsmq]$/i)
-    src = board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
-    trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move) if !src.nil?
-    until !src.nil? && correct_color?(src, side_to_move) && board.legal_move?(src, trg)
-      show_error(src, trg, side_to_move, input)
+  def move(src = nil, trg = nil)
+    until move_verified?(src, trg)
       input = validated_input
-      confirm(input.upcase) if input.match?(/^[nlsmq]$/i)
-      src = board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
-      trg = src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move) if !src.nil?
+      src = origin_square(input)
+      trg = target_square(src, input) unless src.nil?
+      show_error(src, trg, side_to_move, input)
     end
     board.piece_moves(src, trg)
+  end
+
+  def origin_square(input)
+    board.activate_piece(starting_rank_coords(input), starting_file_coords(input))
+  end
+
+  def target_square(src, input)
+    src.class.new(ending_file_coords(input), ending_rank_coords(input), side_to_move)
+  end
+
+  def move_verified?(src, trg)
+    !src.nil? && correct_color?(src, side_to_move) && board.legal_move?(src, trg)
   end
 
   def validated_input
@@ -46,7 +69,11 @@ class Game
       print display_error_invalid_move_input
       input = gets.chomp
     end
-    input
+    if input.match?(/^[nlsmq]$/i)
+      confirm(input.upcase)
+    else
+      input
+    end
   end
 
   def show_error(src, trg, side_to_move, input)
@@ -55,10 +82,7 @@ class Game
     elsif !correct_color?(src, side_to_move)
       print display_error_wrong_color(src, side_to_move)
     elsif !board.legal_move?(src, trg)
-      print display_error_invalid_move_check if board.in_check?(side_to_move)
-      print display_error_invalid_move(src) if !board.valid_move?(src, trg) && !board.request_for_castling?(src, trg)
-      print display_error_invalid_move_path if !board.path_free?(src, trg) && board.valid_move?(src, trg) && !board.request_for_castling?(src, trg)
-      print display_error_invalid_move_castling if board.request_for_castling?(src, trg) && !board.castling_permissible?(trg)
+      board.show_error(src, trg)
     end
   end
 
@@ -70,12 +94,22 @@ class Game
     input.match?(/^[a-h][1-8][a-h][1-8]$|^[nlsmq]$/i)
   end
 
-  def top_bar_menu(input)
+  def confirm(input)
+    print display_warning_unsaved_game
+    answer = gets[0].downcase
+    if answer == 'y'
+      ribbon_bar(input)
+    else
+      play
+    end
+  end
+
+  def ribbon_bar(input)
     case input
     when 'N'
       start_two_players_game
     when 'L'
-      load_game.play 
+      load_game.play
     when 'S'
       save_game
     when 'M'
@@ -86,15 +120,15 @@ class Game
   end
 
   def to_yaml
-    YAML::dump(self)
+    YAML.dump(self)
   end
 
   def from_yaml(game)
     YAML.load(File.read(game))
   end
-  
+
   def save_game
-    filename = prompt_save_name 
+    filename = prompt_save_name
     File.open(File.join(Dir.pwd, "/saved/#{filename}.yaml"), 'w') { |file| file << to_yaml }
     puts display_report_game_saved
     resume_game
@@ -109,8 +143,8 @@ class Game
 
   def saved_games
     Dir.entries('saved/')
-        .reject { |entry| File.directory?(entry) }
-        .map { |file| File.basename(file, '.yaml') }
+       .reject { |entry| File.directory?(entry) }
+       .map { |file| File.basename(file, '.yaml') }
   end
 
   def show_saved_games
@@ -132,14 +166,23 @@ class Game
   def prompt_save_name
     print display_save_game_prompt
     input = gets.chomp
-    until !File.exist?(File.join(Dir.pwd, "/saved/#{input}.yaml"))
-      print display_warning_existing_filename(input)
-      answer = gets[0].downcase
-      break if answer == 'y'
+    while existing_filename?(input)
+      return input if overwrite?(input)
+
       print display_save_game_prompt
       input = gets.chomp
     end
     input
+  end
+
+  def existing_filename?(input)
+    File.exist?(File.join(Dir.pwd, "/saved/#{input}.yaml"))
+  end
+
+  def overwrite?(input)
+    print display_warning_existing_filename(input)
+    answer = gets[0].downcase
+    answer == 'y'
   end
 
   def resume_game
@@ -149,16 +192,6 @@ class Game
       play
     else
       main_menu
-    end
-  end
-
-  def confirm(input)
-    print display_warning_unsaved_game
-    answer = gets[0].downcase
-    if answer == 'y'
-      top_bar_menu(input)
-    else
-      play
     end
   end
 
@@ -194,6 +227,11 @@ class Game
     system 'clear'
     create_player('white')
     create_player('black')
+    board.populate_board
+  end
+
+  def new_round
+    @board = Board.new
     board.populate_board
   end
 
