@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require './lib/board'
 require 'yaml'
 
@@ -113,7 +114,7 @@ class Game
     when 'S'
       save_game
     when 'M'
-      main_menu
+      start_game
     when 'Q'
       quit
     end
