@@ -16,7 +16,7 @@ module MoveValidator
   end
 
   def pawn_move_is_valid?(src, trg)
-    if target_square_is_empty?(src, trg)
+    if target_square_is_empty?(trg)
       pawn_move_forward?(src, trg) &&
         (pawn_regular_move?(src, trg) ||
         pawn_two_square_advance?(src, trg) ||
@@ -28,20 +28,13 @@ module MoveValidator
     end
   end
 
-  def target_square_is_empty?(src, trg)
-    board[trg.rank][trg.file].nil?
-  end
-
-  def target_square_is_enemy?(src, trg)
-    board[trg.rank][trg.file].color != src.color
-  end
-
   def pawn_regular_move?(src, trg)
     (src.rank - trg.rank).abs == 1 && src.file == trg.file
   end
 
   def pawn_two_square_advance?(src, trg)
-    (src.rank - trg.rank).abs == 2 && src.file == trg.file
+    (src.rank - trg.rank).abs == 2 && src.file == trg.file &&
+    (src.rank == 1 || src.rank == 6)
   end
 
   def pawn_diagonal_move?(src, trg)
