@@ -11,7 +11,7 @@ def start_game
   print display_input_prompt
   input = gets.chomp.to_i
   until input.between?(1, 4)
-    puts display_error_invalid_input
+    print display_error_invalid_input
     input = gets.chomp.to_i
   end
   main_menu(input)
@@ -30,9 +30,16 @@ def main_menu(input)
   end
 end
 
+def start_single_player_game
+  game = Game.new
+  game.setup_single_player_game
+  game.play
+  restart(game)
+end
+
 def start_two_players_game
   game = Game.new
-  game.setup
+  game.setup_two_players_game
   game.play
   restart(game)
 end
