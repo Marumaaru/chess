@@ -54,8 +54,23 @@ def quit
   exit
 end
 
+def ribbon_bar(input)
+  case input
+  when 'N'
+    start_two_players_game
+  when 'L'
+    load_game.play
+  when 'S'
+    save_game
+  when 'M'
+    start_game
+  when 'Q'
+    quit
+  end
+end
+
 def restart(game)
-  puts display_restart_game_prompt
+  print display_restart_game_prompt
   input = gets.chomp.downcase
   if input == 'y'
     game.new_round
