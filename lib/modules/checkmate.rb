@@ -29,7 +29,7 @@ module Checkmate
   end
 
   def no_ally_can_capture_checking_piece?(color)
-    current_player_color_pieces = find_pieces_by(color)
+    current_player_color_pieces = find_pieces_by(color).reject { |piece| piece.is_a?(King) }
     attackers = find_attackers(color)
     defenders = find_defenders(current_player_color_pieces, attackers)
     attackers.any? && defenders.none?

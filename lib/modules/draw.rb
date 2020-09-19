@@ -6,10 +6,7 @@ module Draw
   end
 
   def stalemate?(color)
-    !in_check?(color) &&
-      no_legal_move_to_escape?(color) &&
-      no_ally_can_capture_checking_piece?(color) &&
-      no_ally_can_block_checking_piece?(color)
+    !in_check?(color) && no_legal_move_to_escape?(color)
   end
 
   def threefold_repetition?
@@ -41,11 +38,17 @@ module Draw
   def king_and_bishop_same_color?
     pieces = find_pieces_except_king
     pieces.size == 2 &&
-      pieces.all? do |piece|
-        piece.is_a?(Bishop) &&
-          ((piece.rank - piece.file).abs.even? ||
-           (piece.rank - piece.file).abs.odd?)
-      end
+      pieces.all? { |piece| piece.is_a?(Bishop) } &&
+      (pieces.all? { |piece| light_square?(piece) } ||
+      pieces.all? { |piece| dark_square?(piece) })
+  end
+
+  def light_square?(piece)
+    (piece.rank - piece.file).abs.even?
+  end
+
+  def dark_square?(piece)
+    (piece.rank - piece.file).abs.odd?
   end
 
   def find_pieces_except_king

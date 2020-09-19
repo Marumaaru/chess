@@ -26,7 +26,8 @@ module InCheck
   end
 
   def make_simulation(src, trg)
-    place(trg)
+    fake_trg = src.class.new(trg.file, trg.rank, src.color)
+    place(fake_trg)
     clean(src)
   end
 
