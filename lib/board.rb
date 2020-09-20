@@ -8,16 +8,16 @@ require './lib/modules/castling'
 require './lib/modules/en_passant'
 require './lib/modules/promotion'
 require './lib/modules/fan_converter'
-require './lib/move_validator'
+require './lib/modules/move_validator'
 require './lib/modules/errors'
 require './lib/modules/colorable'
-require './lib/displayable'
-require './lib/bishop'
-require './lib/knight'
-require './lib/rook'
-require './lib/queen'
-require './lib/king'
-require './lib/pawn'
+require './lib/modules/displayable'
+require './lib/pieces/bishop'
+require './lib/pieces/knight'
+require './lib/pieces/rook'
+require './lib/pieces/queen'
+require './lib/pieces/king'
+require './lib/pieces/pawn'
 
 require 'pry'
 
@@ -208,10 +208,6 @@ class Board
       black_on_gray(" #{square.symbol} ")
     end
   end
-
-  # def flip(color)
-  #   @board = color == 'white' ? @board : @board.reverse
-  # end
 
   def capture?(trg)
     !board[trg.rank][trg.file].nil? && board[trg.rank][trg.file].color != trg.color

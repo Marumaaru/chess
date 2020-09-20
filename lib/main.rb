@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require_relative 'board.rb'
-require_relative 'displayable.rb'
 require_relative 'game.rb'
+require './lib/modules/displayable'
 
 include Displayable
 
