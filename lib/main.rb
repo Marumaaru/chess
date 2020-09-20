@@ -8,7 +8,7 @@ include Displayable
 
 def start_game
   puts display_welcome_intro
-  print display_input_prompt
+  print display_main_menu_input_prompt
   input = gets.chomp.to_i
   until input.between?(1, 4)
     print display_error_invalid_input

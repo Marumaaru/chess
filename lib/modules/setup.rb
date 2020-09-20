@@ -12,7 +12,7 @@ module Setup
   end
 
   def choose_color
-    print display_color_prompt
+    print display_single_player_color_prompt
     input = gets.chomp.to_i
     until input.between?(1, 2)
       print display_error_invalid_input

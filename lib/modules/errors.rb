@@ -23,7 +23,7 @@ module Errors
   def invalid_path(src, trg)
     return unless !path_free?(src, trg) && valid_move?(src, trg) && !request_for_castling?(src, trg)
 
-    print display_error_invalid_path
+    print display_error_invalid_path(src)
   end
 
   def invalid_castling(src, trg)

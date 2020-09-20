@@ -85,33 +85,14 @@ module Displayable
     HEREDOC
   end
 
-  def display_one_player_options
-    <<~HEREDOC
-      1. Black
-
-      2. White
-
-      3. Back to Main Menu
-      
-    HEREDOC
-  end
-
-  # def display_two_players_options
-  #   <<~HEREDOC
-
-  #     4. Back to Main Menu
-      
-  #   HEREDOC
-  # end
-
-  def display_game_header(side_to_move, white_pieces_taken, black_pieces_taken)
+  def display_tag_roster(side_to_move, white_pieces_taken, black_pieces_taken)
     <<~HEREDOC
 
         Event "Informal Game"
         Date #{Time.now.ctime}
 
-        White "#{players.first.name.capitalize}"
-        Black "#{players.last.name.capitalize}"
+        White "#{players.find { |player| player.color == 'white' }.name.capitalize}"
+        Black "#{players.find { |player| player.color == 'black' }.name.capitalize}"
 
         White player taken: #{black_pieces_taken.join(', ')}
         Black player taken: #{white_pieces_taken.join(', ')}
@@ -119,7 +100,7 @@ module Displayable
     HEREDOC
   end
 
-  def display_menu_options
+  def display_ribbon_bar
     system 'clear'
     printf("#{reverse_color("%<new_game>-15s | %<load>-11s | %<save>-11s | %<main_menu>-15s | %<quit>-13s")}",
           { :new_game => "  (N)ew Game",
@@ -137,26 +118,26 @@ module Displayable
     "\nWho will play #{color.capitalize}'s? "
   end
 
-  def display_input_prompt
+  def display_single_player_color_prompt
+    "\nWhat color would you like to play?\nPress #1 for 'white' or #2 for 'black': "
+  end
+
+  def display_main_menu_input_prompt
     "\nPlease make your choice: "
   end
 
-  def display_game_loading
-    # system 'clear'
-    print "Loading your game "
-    12.times do
-      sleep(0.2)
-      print "."
-    end
-    puts "#{green("Done!")} "
-  end
+  # def display_game_loading
+  #   # system 'clear'
+  #   print "Loading your game "
+  #   12.times do
+  #     sleep(0.2)
+  #     print "."
+  #   end
+  #   puts "#{green("Done!")} "
+  # end
 
   def display_report_game_saved
-    print "\n#{green("Your game was successfully saved.")}"
-  end
-
-  def display_input_error
-    "\e[31mThis move is not valid, please try again\e[0m"
+    "\n#{green("Your game was successfully saved.")}"
   end
 
   def display_error_invalid_move_input
@@ -171,11 +152,11 @@ module Displayable
     "\n#{red("!! Invalid move")}\n#{src.class} doesn't move like this. Please try again: "
   end
 
-  def display_error_invalid_move_path
-    "\n#{red("!! Invalid move")}\nThe path is not free. Please try again: "
+  def display_error_invalid_path(src)
+    "\n#{red("!! Invalid move")}\n#{src.class} cannot move through other pieces. Please try again: "
   end
 
-  def display_error_invalid_move_castling
+  def display_error_invalid_castling
     "\n#{red("!! Invalid move")}\nCastling is not permitted. Please try again: "
   end
 
@@ -188,7 +169,7 @@ module Displayable
   end
 
   def display_error_invalid_input
-    "\n#{bg_red("ERROR")}: #{red("invalid input")}"
+    "\n#{red("!! Invalid input. ")}Please try again: "
   end
 
   def display_warning_unsaved_game
@@ -213,6 +194,10 @@ module Displayable
 
   def display_resume_game_prompt
     "\nResume game [Y/N]? "
+  end
+
+  def display_promotion_prompt
+    "\nYou pawn is eligible for promotion, please insert \n'B' for Bishop, 'N' for Knight, 'R' for Rook, 'Q' for Queen: "
   end
 
   def display_congratulations
