@@ -19,8 +19,6 @@ require './lib/pieces/queen'
 require './lib/pieces/king'
 require './lib/pieces/pawn'
 
-require 'pry'
-
 class Board
   include MoveValidator
   include Errors
@@ -96,7 +94,7 @@ class Board
       current = queue.shift
       return current if current.file == trg.file && current.rank == trg.rank
 
-      current.where_can_jump_from_here.each { |child| queue << child }
+      current.where_can_jump.each { |child| queue << child }
     end
   end
 

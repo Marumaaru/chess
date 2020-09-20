@@ -18,7 +18,7 @@ class Knight
     color == 'white' ? "\u2658" : "\u265E"
   end
 
-  def where_can_jump_from_here #legal_moves
+  def where_can_jump
     MOVES.map { |row, col| [row + file, col + rank] }
         .select { |row, col| row.between?(0,7) && col.between?(0,7) }
         .map { |coords| Knight.new(*coords, color, self) }

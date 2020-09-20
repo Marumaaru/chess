@@ -17,7 +17,7 @@ class King
       color == 'white' ? "\u2654" : "\u265A"
     end
     
-    def where_can_jump_from_here #legal_moves
+    def where_can_jump
       MOVES.map { |row, col| [row + file, col + rank] }
           .select { |row, col| row.between?(0,7) && col.between?(0,7) }
           .map { |coords| King.new(*coords, color, self) }

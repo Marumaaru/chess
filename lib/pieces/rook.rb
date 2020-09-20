@@ -17,7 +17,7 @@ class Rook
     color == 'white' ? "\u2656" : "\u265C"
   end
   
-  def where_can_jump_from_here #legal_moves
+  def where_can_jump
     MOVES.map { |row, col| [row + file, col + rank] }
         .select { |row, col| row.between?(0,7) && col.between?(0,7) }
         .map { |coords| Rook.new(*coords, color, self) }

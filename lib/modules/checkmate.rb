@@ -10,7 +10,7 @@ module Checkmate
 
   def no_legal_move_to_escape?(color)
     current_player_king = find_king(color)
-    all_moves = current_player_king.where_can_jump_from_here
+    all_moves = current_player_king.where_can_jump
     valid_moves = all_moves.select do |move|
       target_square_is_empty?(move) ||
         target_square_is_enemy?(current_player_king, move)
