@@ -3,11 +3,13 @@
 require './lib/board'
 require './lib/computer'
 require './lib/modules/save_load'
+require './lib/modules/setup'
+require './lib/modules/lan_converter'
 
 class Game
   include SaveLoad
-
-  Player = Struct.new(:name, :color)
+  include Setup
+  include LanConverter
 
   attr_reader :board, :players, :current_player_idx
 
@@ -36,7 +38,6 @@ class Game
   def update_display
     puts display_ribbon_bar
     puts display_tag_roster(side_to_move, board.white_pieces_taken, board.black_pieces_taken)
-    # board.flip(side_to_move)
     board.show
     print display_current_turn(side_to_move)
   end
@@ -107,82 +108,6 @@ class Game
     else
       play
     end
-  end
-
-  def starting_rank_coords(input)
-    rank_coord(split_lan(input).first)
-  end
-
-  def starting_file_coords(input)
-    file_coord(split_lan(input).first)
-  end
-
-  def ending_rank_coords(input)
-    rank_coord(split_lan(input).last)
-  end
-
-  def ending_file_coords(input)
-    file_coord(split_lan(input).last)
-  end
-
-  def split_lan(input)
-    input.downcase.scan(/[a-z][1-8]/)
-  end
-
-  def rank_coord(input)
-    board.board.size - input.split('').last.to_i
-  end
-
-  def file_coord(input)
-    (input.split('').first.ord - 49).chr.to_i
-  end
-
-  def setup_single_player_game
-    system 'clear'
-    color = choose_color
-    create_player(color)
-    create_computer_player(assign_color(color))
-    board.populate_board
-  end
-
-  def choose_color
-    print display_color_prompt
-    input = gets.chomp.to_i
-    until input.between?(1, 2)
-      print display_error_invalid_input
-      input = gets.chomp.to_i
-    end
-    input == 1 ? 'white' : 'black'
-  end
-
-  def assign_color(color)
-    color == 'white' ? 'black' : 'white'
-  end
-
-  def create_computer_player(color)
-    if color == 'white'
-      players.unshift(Computer.new(color, board))
-    else
-      players << Computer.new(color, board)
-    end
-  end
-
-  def setup_two_players_game
-    system 'clear'
-    create_player('white')
-    create_player('black')
-    board.populate_board
-  end
-
-  def new_round
-    @board = Board.new
-    board.populate_board
-  end
-
-  def create_player(color)
-    print display_name_prompt(color)
-    name = gets.chomp
-    players << Player.new(name, color)
   end
 
   def current_player
