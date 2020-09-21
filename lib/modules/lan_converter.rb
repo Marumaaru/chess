@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# converts LAN input to the board coordinates
 module LanConverter
   def starting_rank_coords(input)
     rank_coord(split_lan(input).first)

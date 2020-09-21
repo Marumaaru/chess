@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# Sets up the requested type (single/two player) game
 module Setup
   Player = Struct.new(:name, :color)
 

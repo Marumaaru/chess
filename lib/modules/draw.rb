@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# contains everything related to the Draw conditions
 module Draw
   def draw?(color)
     stalemate?(color) || threefold_repetition? || fifty_move? || dead_position?

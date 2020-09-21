@@ -1,9 +1,12 @@
+# frozen_string_literal: true
+
+# move generator for Rook piece
 class Rook
   attr_reader :name, :file, :rank, :parent, :color, :symbol
-  
+
   MOVES = [[1, 0], [-1, 0], [0, 1], [0, -1]].freeze
-  
-  def initialize(file, rank, color, parent = nil) 
+
+  def initialize(file, rank, color, parent = nil)
     @file = file
     @rank = rank
     @name = 'R'
@@ -16,10 +19,10 @@ class Rook
   def assign_symbol_by(color)
     color == 'white' ? "\u2656" : "\u265C"
   end
-  
+
   def where_can_jump
     MOVES.map { |row, col| [row + file, col + rank] }
-        .select { |row, col| row.between?(0,7) && col.between?(0,7) }
-        .map { |coords| Rook.new(*coords, color, self) }
+         .select { |row, col| row.between?(0, 7) && col.between?(0, 7) }
+         .map { |coords| Rook.new(*coords, color, self) }
   end
 end

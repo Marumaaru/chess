@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+
+# contains everything related to the check conditions
 module InCheck
   def in_check?(color)
     enemy_color = color == 'white' ? 'black' : 'white'

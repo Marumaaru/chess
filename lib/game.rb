@@ -6,6 +6,7 @@ require './lib/modules/save_load'
 require './lib/modules/setup'
 require './lib/modules/lan_converter'
 
+# Controller of the application/game flow
 class Game
   include SaveLoad
   include Setup

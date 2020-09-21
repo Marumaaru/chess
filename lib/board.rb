@@ -19,6 +19,7 @@ require './lib/pieces/queen'
 require './lib/pieces/king'
 require './lib/pieces/pawn'
 
+# Model of the application: directly manages the data, logic and rules of the game
 class Board
   include MoveValidator
   include Errors

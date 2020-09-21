@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+
+# validates the correctness of piece movements
 module MoveValidator
   def valid_move?(src, trg)
     if src.is_a?(Pawn)
@@ -34,7 +37,7 @@ module MoveValidator
 
   def pawn_two_square_advance?(src, trg)
     (src.rank - trg.rank).abs == 2 && src.file == trg.file &&
-    (src.rank == 1 || src.rank == 6)
+      (src.rank == 1 || src.rank == 6)
   end
 
   def pawn_diagonal_move?(src, trg)

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# contains everything related to the Castling move
 module Castling
   def castling(trg)
     king = find_king(trg.color)

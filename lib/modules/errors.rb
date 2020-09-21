@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# keeps all the eventual errors of legality check
 module Errors
   def show_error(src, trg)
     invalid_move_check(src) ||

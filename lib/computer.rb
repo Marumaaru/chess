@@ -3,6 +3,7 @@
 require './lib/game'
 require './lib/board'
 
+# a very basic AI who does a random legal move
 class Computer
   include Colorable
   include Displayable
@@ -19,7 +20,7 @@ class Computer
     pieces = board.find_pieces_by(color)
     until board.legal_move?(src, trg)
       src = pieces.sample
-      trg = src.where_can_jump_from_here.sample
+      trg = src.where_can_jump.sample
     end
     board.piece_moves(src, trg)
   end

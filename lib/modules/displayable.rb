@@ -102,9 +102,9 @@ module Displayable
 
   def display_ribbon_bar
     system 'clear'
-    printf("#{reverse_color("%<new_game>-15s | %<load>-11s | %<save>-11s | %<main_menu>-15s | %<quit>-13s")}",
-          { :new_game => "  (N)ew Game",
-            :load => "  (L)oad",
+    printf("#{reverse_color("%<new_game>-16s | %<load>-12s | %<save>-12s | %<main_menu>-15s | %<quit>-13s")}",
+          { :new_game => "   (N)ew Game",
+            :load => "   (L)oad",
             :save => "  (S)ave",
             :main_menu => "  (M)ain Menu",
             :quit => "  (Q)uit" })

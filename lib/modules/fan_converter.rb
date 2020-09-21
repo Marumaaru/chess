@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# converts the move to the FAN format
 module FanConverter
   def fan(src, trg, fan = [])
     fan.push(an_piece(src),

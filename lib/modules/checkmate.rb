@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# contains everything related to the Checkmate conditions
 module Checkmate
   def checkmate?(color)
     in_check?(color) &&

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# contains everything related to the pawn Promotion
 module Promotion
   def promotion?(trg)
     (trg.is_a?(Pawn) && trg.rank == 0 && trg.color == 'white') ||

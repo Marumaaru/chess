@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# Entry-point of the application
+
 require_relative 'board.rb'
 require_relative 'game.rb'
 require './lib/modules/displayable'

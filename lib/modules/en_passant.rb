@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# contains everything related to En Passant move
 module EnPassant
   def en_passant?(src, trg)
     correct_rank?(src) &&
@@ -54,27 +55,6 @@ module EnPassant
       (previous_src.rank - previous_trg.rank).abs == 2 &&
       previous_trg == captured_adjacent(src, trg)
   end
-
-  # def capture_en_passant_performed?(src, trg)
-  #   previous_src = @history[@history.size - 2].first if @history.size > 2
-  #   previous_trg = @history[@history.size - 2].last if @history.size > 2
-  #   previous_trg.is_a?(Pawn) &&
-  #     (previous_src.rank - previous_trg.rank).abs == 2 &&
-  #     previous_trg.file == trg.file &&
-  #     (previous_trg.rank == trg.rank - 1 ||
-  #       previous_trg.rank == trg.rank + 1)
-  # end
-
-  # def capture_en_passant_performed?(src, trg)
-  #   return if @history.empty?
-
-  #   last_src = @history.last.first
-  #   last_trg = @history.last.last
-  #   last_is_double_pawn_push? &&
-  #   last_trg.file == trg.file &&
-  #   (last_trg.rank == trg.rank - 1 || last_trg.rank == trg.rank + 1) &&
-  #   board[last_trg.rank][last_trg.file].nil?
-  # end
 
   def en_passant_rights
     pawns = board.flatten.find_all { |square| square.is_a?(Pawn) }

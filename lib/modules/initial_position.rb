@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# places pieces on their initial position
 module InitialPosition
   def place_rooks
     place(Rook.new(0, 7, 'white'))
