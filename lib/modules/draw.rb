@@ -7,7 +7,13 @@ module Draw
   end
 
   def stalemate?(color)
-    !in_check?(color) && no_legal_move_to_escape?(color)
+    !in_check?(color) &&
+      no_legal_move_to_escape?(color) &&
+      no_other_moves?(color)
+  end
+
+  def no_other_moves?(color)
+    find_pieces_by(color).reject { |piece| piece.is_a?(King) }.none?
   end
 
   def threefold_repetition?
