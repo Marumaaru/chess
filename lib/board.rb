@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'pry'
 require './lib/modules/initial_position'
 require './lib/modules/checkmate'
 require './lib/modules/draw'
@@ -89,13 +90,26 @@ class Board
     board[trg.rank][trg.file].color != src.color
   end
 
+  # def bfs_traversal(src, trg, queue = [])
+  #   queue << src
+  #   until queue.empty?
+  #     current = queue.shift
+  #     return current if current.file == trg.file && current.rank == trg.rank
+
+  #     current.where_can_jump.each { |child| queue << child }
+  #   end
+  # end
+
   def bfs_traversal(src, trg, queue = [])
+    temp_board = Array.new(SIZE) { Array.new(SIZE) }
     queue << src
     until queue.empty?
       current = queue.shift
       return current if current.file == trg.file && current.rank == trg.rank
 
-      current.where_can_jump.each { |child| queue << child }
+      temp_board[current.rank][current.file] = 1
+
+      current.where_can_jump.each { |child| queue << child if temp_board[child.rank][child.file].nil? }
     end
   end
 
