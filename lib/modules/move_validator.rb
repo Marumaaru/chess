@@ -19,23 +19,26 @@ module MoveValidator
   end
 
   def pawn_move_is_valid?(src, trg)
+    return false unless pawn_move_forward?(src, trg)
+
     if target_square_is_empty?(trg)
-      pawn_move_forward?(src, trg) &&
-        (pawn_regular_move?(src, trg) ||
-        pawn_two_square_advance?(src, trg) ||
+      (pawn_regular_move?(src, trg) ||
+        pawn_double_step_push?(src, trg) ||
         (pawn_diagonal_move?(src, trg) && en_passant?(src, trg)))
     else
-      pawn_move_forward?(src, trg) &&
-        target_square_is_enemy?(src, trg) &&
-        pawn_diagonal_move?(src, trg)
+      pawn_captures?(src, trg)
     end
+  end
+
+  def pawn_captures?(src, trg)
+    target_square_is_enemy?(src, trg) && pawn_diagonal_move?(src, trg)
   end
 
   def pawn_regular_move?(src, trg)
     (src.rank - trg.rank).abs == 1 && src.file == trg.file
   end
 
-  def pawn_two_square_advance?(src, trg)
+  def pawn_double_step_push?(src, trg)
     (src.rank - trg.rank).abs == 2 && src.file == trg.file &&
       (src.rank == 1 || src.rank == 6)
   end
@@ -50,8 +53,16 @@ module MoveValidator
   end
 
   def knight_move_is_valid?(src, trg)
-    ((src.file - trg.file).abs == 1 && (src.rank - trg.rank).abs == 2) ||
-      ((src.file - trg.file).abs == 2 && (src.rank - trg.rank).abs == 1)
+    knight_jumps_two_squares_vertically?(src, trg) ||
+      knight_jumps_two_squares_horizontally?(src, trg)
+  end
+
+  def knight_jumps_two_squares_horizontally?(src, trg)
+    (src.file - trg.file).abs == 2 && (src.rank - trg.rank).abs == 1
+  end
+
+  def knight_jumps_two_squares_vertically?(src, trg)
+    (src.file - trg.file).abs == 1 && (src.rank - trg.rank).abs == 2
   end
 
   def bishop_move_is_valid?(src, trg)

@@ -38,7 +38,7 @@ class Game
 
   def update_display
     puts display_ribbon_bar
-    puts display_tag_roster(side_to_move, board.white_pieces_taken, board.black_pieces_taken)
+    puts display_tag_roster(board.white_pieces_taken, board.black_pieces_taken)
     board.show
     print display_current_turn(side_to_move)
   end
