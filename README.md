@@ -44,7 +44,7 @@ And the last, but not the least point. As far as this project has a lot of diffe
 
 ## Eventual Improvements List
 
-If there is one thing to say about building chess — it's the same addiction as playing it, and it’s never finished.
+If there is one thing to say about building chess - it's the same addiction as playing it, and it’s never finished.
 
 - [ ] `invert_term_color` method. How chess board colors black and white are displayed might depend on the background color of the terminal. Change, if black and white are mixed up.
 
