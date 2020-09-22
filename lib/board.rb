@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'pry'
 require './lib/modules/initial_position'
 require './lib/modules/checkmate'
 require './lib/modules/draw'
@@ -60,9 +59,17 @@ class Board
     place_black_pawns
   end
 
+  # def legal_move?(src, trg)
+  #   (valid_move?(src, trg) &&
+  #   path_free?(src, trg) &&
+  #   (!in_check?(src.color) || getting_out_of_check?(src, trg))) ||
+  #     (request_for_castling?(src, trg) && castling_permissible?(trg))
+  # end
+
   def legal_move?(src, trg)
     (valid_move?(src, trg) &&
     path_free?(src, trg) &&
+    getting_out_of_check?(src, trg) &&
     (!in_check?(src.color) || getting_out_of_check?(src, trg))) ||
       (request_for_castling?(src, trg) && castling_permissible?(trg))
   end
@@ -89,16 +96,6 @@ class Board
   def target_square_is_enemy?(src, trg)
     board[trg.rank][trg.file].color != src.color
   end
-
-  # def bfs_traversal(src, trg, queue = [])
-  #   queue << src
-  #   until queue.empty?
-  #     current = queue.shift
-  #     return current if current.file == trg.file && current.rank == trg.rank
-
-  #     current.where_can_jump.each { |child| queue << child }
-  #   end
-  # end
 
   def bfs_traversal(src, trg, queue = [])
     temp_board = Array.new(SIZE) { Array.new(SIZE) }

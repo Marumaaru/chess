@@ -3,14 +3,14 @@
 # keeps all the eventual errors of legality check
 module Errors
   def show_error(src, trg)
-    invalid_move_check(src) ||
+    invalid_move_check(src, trg) ||
       invalid_move(src, trg) ||
       invalid_path(src, trg) ||
       invalid_castling(src, trg)
   end
 
-  def invalid_move_check(src)
-    return unless in_check?(src.color)
+  def invalid_move_check(src, trg)
+    return unless in_check?(src.color) || !getting_out_of_check?(src, trg)
 
     print display_error_invalid_move_check
   end
